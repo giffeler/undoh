@@ -1,7 +1,7 @@
 {
   "name": "undoh",
-  "version": "0.0.1",
-  "description": "Undo",
+  "version": "1.0.0",
+  "description": "This Typescript module provides an undo class that can be used to implement a simple undo/redo mechanism in programs.",
   "main": "lib/undo.js",
   "types": "lib/undo.d.ts",
   "scripts": {
