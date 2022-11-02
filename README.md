@@ -36,6 +36,8 @@ The redo function can be executed if undo was called before. If there are no fut
 
 The following example script shows how easy it is to use the Undo class. A total of four HTML buttons are created. The upper two are linked to the undo and redo function. The lower two buttons create or delete text input fields. Between one and a maximum of five text input fields can be created. The creation or deletion of a field and the modification of its content can be undone or redone.
 
+[Stackblitz online example](https://stackblitz.com/edit/typescript-undoh?file=index.ts)
+
 ```html
 <!DOCTYPE html>
 <html>
@@ -54,7 +56,7 @@ The following example script shows how easy it is to use the Undo class. A total
 ### example.ts
 
 ```typescript
-import Undo from "./undo.js";
+import Undo from "./undoh.js";
 
 type idval = { id: string; value: string };
 
