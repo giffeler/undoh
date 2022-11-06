@@ -49,27 +49,30 @@ export default class Undo implements iUndo {
   public constructor(
     data: any,
     max: number = 100,
-    objKeySort: boolean = false
+    objKeySort: boolean = false,
+    replacer: any = null
   ) {
     this.type = Undo.getType(data);
     this.max = max;
     this.keysort = objKeySort && this.type === "O";
-    this.present = this.prepare(data);
+    this.present = this.prepare(data, replacer);
     this.past = [];
     this.future = [];
   }
 
-  private prepare(data: any): tIndexable {
+  private prepare(data: any, replacer: any = null): tIndexable {
     return typeof data === "string"
       ? `${data}`
       : (this.keysort
           ? Undo.jsonSort(JSON.stringify(data))
-          : JSON.stringify(data, null, "\n")
+          : JSON.stringify(data, replacer, "\n")
         ).split(/\s*$\s*/m);
   }
 
-  private recover(data: tIndexable): any {
-    return typeof data === "string" ? `${data}` : JSON.parse(data.join(""));
+  private recover(data: tIndexable, reviver: any = null): any {
+    return typeof data === "string"
+      ? `${data}`
+      : JSON.parse(data.join(""), reviver);
   }
 
   public get countPast(): number {
@@ -99,9 +102,9 @@ export default class Undo implements iUndo {
     );
   }
 
-  public retain(data: any): boolean {
+  public retain(data: any, replacer: any = null): boolean {
     if (this.type === Undo.getType(data)) {
-      const md: tIndexable = this.prepare(data);
+      const md: tIndexable = this.prepare(data, replacer);
       if (this.hasChanged(md)) {
         this.past.length === this.max && void this.past.shift();
         void this.past.push(Undo.diffScript(md, this.present));
@@ -113,22 +116,22 @@ export default class Undo implements iUndo {
     return false;
   }
 
-  public undo(): any {
+  public undo(reviver: any = null): any {
     if (this.past.length > 0) {
       const e: tIndexable = Undo.applyEdit(this.past.pop()!, this.present);
       void this.future.unshift(Undo.diffScript(e, this.present));
       this.present = e;
     }
-    return this.recover(this.present);
+    return this.recover(this.present, reviver);
   }
 
-  public redo(): any {
+  public redo(reviver: any = null): any {
     if (this.future.length > 0) {
       const e: tIndexable = Undo.applyEdit(this.future.shift()!, this.present);
       void this.past.push(Undo.diffScript(e, this.present));
       this.present = e;
     }
-    return this.recover(this.present);
+    return this.recover(this.present, reviver);
   }
 
   public static diffScript(older: tIndexable, newer: tIndexable): iScript[] {
