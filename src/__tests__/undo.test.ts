@@ -13,7 +13,7 @@ describe("JSON", () => {
 
   test("sort", () => {
     expect(Undo.jsonSort(JSON.stringify(data))).toBe(
-      `{\n"a":[\n1,\n2,\n3\n],\n"b":34,\n"c":{\n"x":1,\n"y":"hello",\n"z":3\n}\n}`,
+      `{\n"a":[\n1,\n2,\n3\n],\n"b":34,\n"c":{\n"x":1,\n"y":"hello",\n"z":3\n}\n}`
     );
   });
 });
@@ -28,11 +28,16 @@ describe("diff string", () => {
   });
 
   test("replace", () => {
-    expect(Undo.diffScript("abc", "abd")).toStrictEqual([{ pos: 2 }, { pos: 3, val: "d" }]);
+    expect(Undo.diffScript("abc", "abd")).toStrictEqual([
+      { pos: 2 },
+      { pos: 3, val: "d" },
+    ]);
   });
 
   test("insert", () => {
-    expect(Undo.diffScript("abc", "abec")).toStrictEqual([{ pos: 2, val: "e" }]);
+    expect(Undo.diffScript("abc", "abec")).toStrictEqual([
+      { pos: 2, val: "e" },
+    ]);
   });
 });
 
@@ -42,15 +47,22 @@ describe("diff array", () => {
   });
 
   test("remove", () => {
-    expect(Undo.diffScript(["a", "b", "c"], ["a", "c"])).toStrictEqual([{ pos: 1 }]);
+    expect(Undo.diffScript(["a", "b", "c"], ["a", "c"])).toStrictEqual([
+      { pos: 1 },
+    ]);
   });
 
   test("replace", () => {
-    expect(Undo.diffScript(["a", "b", "c"], ["a", "b", "d"])).toStrictEqual([{ pos: 2 }, { pos: 3, val: "d" }]);
+    expect(Undo.diffScript(["a", "b", "c"], ["a", "b", "d"])).toStrictEqual([
+      { pos: 2 },
+      { pos: 3, val: "d" },
+    ]);
   });
 
   test("insert", () => {
-    expect(Undo.diffScript(["a", "b", "c"], ["a", "b", "e", "c"])).toStrictEqual([{ pos: 2, val: "e" }]);
+    expect(
+      Undo.diffScript(["a", "b", "c"], ["a", "b", "e", "c"])
+    ).toStrictEqual([{ pos: 2, val: "e" }]);
   });
 });
 
@@ -159,13 +171,26 @@ describe("object", () => {
   });
 });
 
-describe ("array of objects", () => {
+describe("array of objects", () => {
   let undo: Undo = new Undo([], 10);
 
   test("retain", () => {
-    expect(undo.retain([{id: "1", value: ""}, {id: 2, value: "abc"}])).toBeTruthy();
-    expect(undo.retain([{id: "1", value: "xyz"}, {id: 2, value: "abc"}])).toBeTruthy();
-    expect(undo.undo()).toStrictEqual([{id: "1", value: ""}, {id: 2, value: "abc"}]);
+    expect(
+      undo.retain([
+        { id: "1", value: "" },
+        { id: 2, value: "abc" },
+      ])
+    ).toBeTruthy();
+    expect(
+      undo.retain([
+        { id: "1", value: "xyz" },
+        { id: 2, value: "abc" },
+      ])
+    ).toBeTruthy();
+    expect(undo.undo()).toStrictEqual([
+      { id: "1", value: "" },
+      { id: 2, value: "abc" },
+    ]);
   });
 });
 
