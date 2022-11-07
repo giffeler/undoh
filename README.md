@@ -32,11 +32,39 @@ Undo returns a snapshot of the previous state as a result, if available. At the 
 
 The redo function can be executed if undo was called before. If there are no future states in memory, the current state is returned. If the data structure is changed after undo and saved again using retain, all values in memory for future changes with redo are lost from this point on.
 
-### example.html
+Since complex data structures are converted using the browser's own JSON functions, a **replacer** parameter can optionally be passed to the *constructor* and the *retain* function, and a **reviver** parameter can optionally be passed to the *undo* or *redo* function. The description of how to use the parameters can be found on the [Mozilla](https://developer.mozilla.org/) pages.
 
-The following example script shows how easy it is to use the Undo class. A total of four HTML buttons are created. The upper two are linked to the undo and redo function. The lower two buttons create or delete text input fields. Between one and a maximum of five text input fields can be created. The creation or deletion of a field and the modification of its content can be undone or redone.
+## Interface
 
-[Stackblitz online example](https://stackblitz.com/edit/typescript-undoh?file=index.ts)
+- constructor(data: any, max?: number, objKeySort?: boolean, replacer?: any);
+  - data: Initializer. The retain function compares the first element to be filed with this value.
+  - max (opt): How many operations can be undone?
+  - objKeySort (opt): Sort objects in ascending order according to the key.
+  - replacer (opt): Applied to the initializer if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#description)
+
+- get countPast(): number;
+- get countFuture(): number;
+- get canUndo(): boolean;
+- get canRedo(): boolean;
+
+- retain(data: any, replacer?: any): boolean;
+  - data: The data type must correspond to that of the initializer.
+  - replacer (opt): Applied to data if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#description)
+
+- undo(reviver?: any): any;
+  - reviver (opt): Applied to this first undo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#description)
+- redo(reviver?: any): any;
+  - reviver (opt): Applied to this first redo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#description)
+
+- static diffScript(older: tIndexable, newer: tIndexable): iScript[];
+- static applyEdit(script: iScript[], older: tIndexable): tIndexable;
+- static jsonSort(json: string): string;
+
+## Example
+
+The following example script shows how easy it is to use the Undoh class. A total of four HTML buttons are created. The upper two are linked to the *undo* and *redo* function. The lower two buttons *create* or *remove* text input fields. Between one and a maximum of five text input fields can be created. The creation or deletion of a field and the modification of its content can be undone or redone.
+
+Try it here: [Stackblitz online](https://stackblitz.com/edit/typescript-undoh?file=index.ts)
 
 ```html
 <!DOCTYPE html>
