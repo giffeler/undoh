@@ -19,6 +19,8 @@
 
 type tIndexable = string | any[];
 type tString = Capitalize<string>;
+type tReplacer = (key?: string, value?: any) => any | (string | number)[];
+type tReviver = tReplacer;
 
 interface iScript {
   pos: number;
@@ -30,21 +32,18 @@ interface iUndo {
   get countFuture(): number;
   get canUndo(): boolean;
   get canRedo(): boolean;
-  retain(data: any): boolean;
-  undo(): any;
-  redo(): any;
+  retain(data: any, replacer?: tReplacer): boolean;
+  undo(reviver?: tReviver): any;
+  redo(reviver?: tReviver): any;
 }
 
 export default class Undo implements iUndo {
-  private readonly type: tString;
-  private readonly max: number;
-  private readonly keysort: boolean;
-  private present: tIndexable;
-  private past: iScript[][];
-  private future: iScript[][];
-
-  private static readonly getType = (data: any): tString =>
-    Object.prototype.toString.call(data)[8] as tString;
+  readonly #type: tString;
+  readonly #max: number;
+  readonly #keysort: boolean;
+  #present: tIndexable;
+  #past: iScript[][];
+  #future: iScript[][];
 
   public constructor(
     data: any,
@@ -52,101 +51,92 @@ export default class Undo implements iUndo {
     objKeySort: boolean = false,
     replacer: any = null
   ) {
-    this.type = Undo.getType(data);
-    this.max = max;
-    this.keysort = objKeySort && this.type === "O";
-    this.present = this.prepare(data, replacer);
-    this.past = [];
-    this.future = [];
+    this.#type = Undo.#getType(data);
+    this.#max = max;
+    this.#keysort = objKeySort && this.#type === "O";
+    this.#present = this.#prepare(data, replacer);
+    this.#past = [];
+    this.#future = [];
   }
 
-  private prepare(data: any, replacer: any = null): tIndexable {
+  #prepare(data: any, replacer?: tReplacer): tIndexable {
     return typeof data === "string"
       ? `${data}`
-      : (this.keysort
+      : (this.#keysort
           ? Undo.jsonSort(JSON.stringify(data))
           : JSON.stringify(data, replacer, "\n")
         ).split(/\s*$\s*/m);
   }
 
-  private recover(data: tIndexable, reviver: any = null): any {
+  #recover(data: tIndexable, reviver?: tReviver): any {
     return typeof data === "string"
       ? `${data}`
       : JSON.parse(data.join(""), reviver);
   }
 
   public get countPast(): number {
-    return this.past.length;
+    return this.#past.length;
   }
 
   public get countFuture(): number {
-    return this.future.length;
+    return this.#future.length;
   }
 
   public get canUndo(): boolean {
-    return this.past.length > 0;
+    return this.#past.length > 0;
   }
 
   public get canRedo(): boolean {
-    return this.future.length > 0;
+    return this.#future.length > 0;
   }
 
-  private hasChanged(data: tIndexable): boolean {
+  #hasChanged(data: tIndexable): boolean {
     return (
-      this.past.length === 0 ||
-      this.present.length !== data.length ||
+      this.#past.length === 0 ||
+      this.#present.length !== data.length ||
       (typeof data === "string"
-        ? this.present !== data
+        ? this.#present !== data
         : data.length === 0 ||
-          data.some((v: any, i: number) => v !== this.present[i]))
+          data.some((v: any, i: number) => v !== this.#present[i]))
     );
   }
 
-  public retain(data: any, replacer: any = null): boolean {
-    if (this.type === Undo.getType(data)) {
-      const md: tIndexable = this.prepare(data, replacer);
-      if (this.hasChanged(md)) {
-        this.past.length === this.max && void this.past.shift();
-        void this.past.push(Undo.diffScript(md, this.present));
-        this.present = md;
-        this.future = [];
+  public retain(data: any, replacer?: tReplacer): boolean {
+    if (this.#type === Undo.#getType(data)) {
+      const md: tIndexable = this.#prepare(data, replacer);
+      if (this.#hasChanged(md)) {
+        this.#past.length === this.#max && this.#past.shift();
+        this.#past.push(Undo.diffScript(md, this.#present));
+        this.#present = md;
+        this.#future = [];
         return true;
       }
     }
     return false;
   }
 
-  public undo(reviver: any = null): any {
-    if (this.past.length > 0) {
-      const e: tIndexable = Undo.applyEdit(this.past.pop()!, this.present);
-      void this.future.unshift(Undo.diffScript(e, this.present));
-      this.present = e;
+  public undo(reviver?: tReviver): any {
+    if (this.#past.length > 0) {
+      const e: tIndexable = Undo.applyEdit(this.#past.pop()!, this.#present);
+      this.#future.unshift(Undo.diffScript(e, this.#present));
+      this.#present = e;
     }
-    return this.recover(this.present, reviver);
+    return this.#recover(this.#present, reviver);
   }
 
-  public redo(reviver: any = null): any {
-    if (this.future.length > 0) {
-      const e: tIndexable = Undo.applyEdit(this.future.shift()!, this.present);
-      void this.past.push(Undo.diffScript(e, this.present));
-      this.present = e;
+  public redo(reviver?: tReviver): any {
+    if (this.#future.length > 0) {
+      const e: tIndexable = Undo.applyEdit(
+        this.#future.shift()!,
+        this.#present
+      );
+      this.#past.push(Undo.diffScript(e, this.#present));
+      this.#present = e;
     }
-    return this.recover(this.present, reviver);
+    return this.#recover(this.#present, reviver);
   }
 
   public static diffScript(older: tIndexable, newer: tIndexable): iScript[] {
-    const modulo = (n: number, d: number): number => ((n % d) + d) % d,
-      range = (
-        start: number,
-        end: number | null = null,
-        step: number = 1
-      ): number[] =>
-        [...Array(end === null ? start : Math.abs(end - start)).keys()]
-          .filter((n: number): boolean => n % step === 0)
-          .map((n: number): number =>
-            end === null ? n : start + (end < start ? -n : n)
-          );
-
     let result: iScript[] = [];
 
     worker(older, newer);
@@ -171,20 +161,21 @@ export default class Undo implements iUndo {
           Array(Z).fill(0),
           Array(Z).fill(0),
         ];
-        for (const h of range(Math.floor(L / 2) + (L % 2 ^ 1) + 1)) {
+        for (const h of Undo.#range(Math.floor(L / 2) + (L % 2 ^ 1) + 1)) {
           for (const r of [0, 1]) {
             let [c, d, o, m]: [number[], number[], number, number] =
-              +r === 0 ? [g, p, 1, 1] : [p, g, 0, -1];
-            for (const k of range(
+              r === 0 ? [g, p, 1, 1] : [p, g, 0, -1];
+            for (const k of Undo.#range(
               -(h - 2 * Math.max(0, h - M)),
               h - 2 * Math.max(0, h - N) + 1,
               2
             )) {
               let a: number =
                   k === -h ||
-                  (k !== h && c[modulo(k - 1, Z)] < c[modulo(k + 1, Z)])
-                    ? c[modulo(k + 1, Z)]
-                    : c[modulo(k - 1, Z)] + 1,
+                  (k !== h &&
+                    c[Undo.#modulo(k - 1, Z)] < c[Undo.#modulo(k + 1, Z)])
+                    ? c[Undo.#modulo(k + 1, Z)]
+                    : c[Undo.#modulo(k - 1, Z)] + 1,
                 b: number = a - k;
               const [s, t]: [number, number] = [a, b];
               while (
@@ -196,12 +187,12 @@ export default class Undo implements iUndo {
                 [a, b] = [a + 1, b + 1];
               }
               const z: number = -(k - w);
-              c[modulo(k, Z)] = a;
+              c[Undo.#modulo(k, Z)] = a;
               if (
                 L % 2 === o &&
                 z >= -(h - o) &&
                 z <= h - o &&
-                c[modulo(k, Z)] + d[modulo(z, Z)] >= N
+                c[Undo.#modulo(k, Z)] + d[Undo.#modulo(z, Z)] >= N
               ) {
                 const [D, x, y, u, v]: [
                   number,
@@ -227,12 +218,12 @@ export default class Undo implements iUndo {
           }
         }
       } else if (N > 0) {
-        for (const n of range(0, N)) {
-          void result.push({ pos: i + n });
+        for (const n of Undo.#range(0, N)) {
+          result.push({ pos: i + n });
         }
       } else {
-        for (const n of range(0, M)) {
-          void result.push({ pos: i, val: newer[j + n] });
+        for (const n of Undo.#range(0, M)) {
+          result.push({ pos: i, val: newer[j + n] });
         }
       }
     }
@@ -243,19 +234,19 @@ export default class Undo implements iUndo {
       res: tIndexable = [];
 
     for (const e of script) {
-      while (e["pos"] > i) {
-        void res.push(older[i++]);
+      while (e.pos > i) {
+        res.push(older[i++]);
       }
-      if (e["pos"] === i) {
+      if (e.pos === i) {
         if ("val" in e) {
-          void res.push(e["val"]);
+          res.push(e.val);
         } else {
           i++;
         }
       }
     }
     while (i < older.length) {
-      void res.push(older[i++]);
+      res.push(older[i++]);
     }
     return typeof older === "string" ? res.join("") : res;
   }
@@ -264,7 +255,7 @@ export default class Undo implements iUndo {
     const mo: any = JSON.parse(json);
 
     if (typeof mo === "object") {
-      const type: tString = Undo.getType(mo),
+      const type: tString = Undo.#getType(mo),
         map: Map<any, any> = traverseObject(mo);
       return type === "A"
         ? `[\n${traverseMap(map, type)}\n]`
@@ -277,7 +268,7 @@ export default class Undo implements iUndo {
       let map: Map<any, any> = new Map();
 
       for (const [key, value] of Object.entries(object).sort()) {
-        const type: tString = Undo.getType(value);
+        const type: tString = Undo.#getType(value);
         map.set(
           key + type,
           typeof value === "object"
@@ -311,5 +302,25 @@ export default class Undo implements iUndo {
       }
       return json;
     }
+  }
+
+  static #getType(data: any): tString {
+    return Object.prototype.toString.call(data)[8] as tString;
+  }
+
+  static #modulo(n: number, d: number): number {
+    return ((n % d) + d) % d;
+  }
+
+  static #range(
+    start: number,
+    end: number | null = null,
+    step: number = 1
+  ): number[] {
+    return [...Array(end === null ? start : Math.abs(end - start)).keys()]
+      .filter((n: number): boolean => n % step === 0)
+      .map((n: number): number =>
+        end === null ? n : start + (end < start ? -n : n)
+      );
   }
 }
