@@ -36,11 +36,23 @@ Since complex data structures are converted using the browser's own JSON functio
 
 ## Interface
 
+```typescript
+type tIndexable = string | any[];
+type tString = Capitalize<string>;
+type tReplacer = (key?: string, value?: any) => any | (string | number)[];
+type tReviver = tReplacer;
+
+interface iScript {
+  pos: number;
+  val?: any;
+}
+```
+
 - constructor(data: any, max?: number, objKeySort?: boolean, replacer?: any);
   - data: Initializer. The retain function compares the first element to be filed with this value.
   - max (opt): How many operations can be undone?
   - objKeySort (opt): Sort objects in ascending order according to the key.
-  - replacer (opt): Applied to the initializer if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#description)
+  - replacer (opt): Applied to the initializer if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#the_replacer_parameter)
 
 - get countPast(): number;
 - get countFuture(): number;
@@ -49,12 +61,12 @@ Since complex data structures are converted using the browser's own JSON functio
 
 - retain(data: any, replacer?: any): boolean;
   - data: The data type must correspond to that of the initializer.
-  - replacer (opt): Applied to data if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#description)
+  - replacer (opt): Applied to data if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#the_replacer_parameter)
 
 - undo(reviver?: any): any;
-  - reviver (opt): Applied to this first undo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#description)
+  - reviver (opt): Applied to this first undo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#using_the_reviver_parameter)
 - redo(reviver?: any): any;
-  - reviver (opt): Applied to this first redo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#description)
+  - reviver (opt): Applied to this first redo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#using_the_reviver_parameter)
 
 - static diffScript(older: tIndexable, newer: tIndexable): iScript[];
 - static applyEdit(script: iScript[], older: tIndexable): tIndexable;
