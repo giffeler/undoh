@@ -1,7 +1,9 @@
 {
-  "name": "@giffeler/undoh",
-  "version": "1.0.2",
-  "description": "This Typescript module provides an undo class that can be used to implement a simple undo/redo mechanism in programs.",
+  "name": "@ekadagami/undoh",
+  "author": "Denis Giffeler",
+  "license": "GPL",
+  "version": "1.1.0",
+  "description": "This Typescript module provides an undo class that can be used to implement a simple undo/redo mechanism.",
   "main": "lib/undo.js",
   "types": "lib/undo.d.ts",
   "scripts": {
@@ -15,13 +17,16 @@
     "type": "git",
     "url": "https://github.com/giffeler/undoh.git"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
   "keywords": [
     "typescript",
+    "javascript",
     "undo-redo",
     "undomanager"
   ],
-  "author": "Denis Giffeler",
-  "license": "GPL",
   "files": [
     "lib/**/*"
   ],
@@ -30,12 +35,11 @@
   },
   "homepage": "https://github.com/giffeler/undoh/blob/main/README.md",
   "devDependencies": {
-    "@types/jest": "^29.1.1",
-    "eslint": "^8.26.0",
-    "jest": "^29.1.2",
-    "npm": "^9.1.1",
+    "@types/jest": "^29.2.3",
+    "eslint": "^8.28.0",
+    "jest": "^29.3.1",
     "prettier": "^2.7.1",
     "ts-jest": "^29.0.3",
-    "typescript": "^4.8.4"
+    "typescript": "^4.9.3"
   }
 }
