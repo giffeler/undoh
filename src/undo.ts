@@ -19,8 +19,8 @@
 
 type tIndexable = string | any[];
 type tString = Capitalize<string>;
-type tReplacer = (key?: string, value?: any) => any | (string | number)[];
-type tReviver = tReplacer;
+type tReviver = (key?: string, value?: any) => any;
+type tReplacer = any;
 
 interface iScript {
   pos: number;
@@ -45,7 +45,7 @@ export default class Undo implements iUndo {
   #past: iScript[][];
   #future: iScript[][];
 
-  public constructor(
+  constructor(
     data: any,
     max: number = 100,
     objKeySort: boolean = false,
@@ -61,33 +61,17 @@ export default class Undo implements iUndo {
 
   #prepare(data: any, replacer?: tReplacer): tIndexable {
     return typeof data === "string"
-      ? `${data}`
+      ? structuredClone(data)
       : (this.#keysort
-          ? Undo.jsonSort(JSON.stringify(data))
-          : JSON.stringify(data, replacer, "\n")
+          ? Undo.jsonSort(data, replacer, 1)
+          : JSON.stringify(data, replacer, 1)
         ).split(/\s*$\s*/m);
   }
 
   #recover(data: tIndexable, reviver?: tReviver): any {
     return typeof data === "string"
-      ? `${data}`
+      ? structuredClone(data)
       : JSON.parse(data.join(""), reviver);
-  }
-
-  public get countPast(): number {
-    return this.#past.length;
-  }
-
-  public get countFuture(): number {
-    return this.#future.length;
-  }
-
-  public get canUndo(): boolean {
-    return this.#past.length > 0;
-  }
-
-  public get canRedo(): boolean {
-    return this.#future.length > 0;
   }
 
   #hasChanged(data: tIndexable): boolean {
@@ -101,7 +85,23 @@ export default class Undo implements iUndo {
     );
   }
 
-  public retain(data: any, replacer?: tReplacer): boolean {
+get countPast(): number {
+    return this.#past.length;
+  }
+
+  get countFuture(): number {
+    return this.#future.length;
+  }
+
+  get canUndo(): boolean {
+    return this.#past.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.#future.length > 0;
+  }
+
+  retain(data: any, replacer?: tReplacer): boolean {
     if (this.#type === Undo.#getType(data)) {
       const md: tIndexable = this.#prepare(data, replacer);
       if (this.#hasChanged(md)) {
@@ -115,7 +115,7 @@ export default class Undo implements iUndo {
     return false;
   }
 
-  public undo(reviver?: tReviver): any {
+  undo(reviver?: tReviver): any {
     if (this.#past.length > 0) {
       const e: tIndexable = Undo.applyEdit(this.#past.pop()!, this.#present);
       this.#future.unshift(Undo.diffScript(e, this.#present));
@@ -124,7 +124,7 @@ export default class Undo implements iUndo {
     return this.#recover(this.#present, reviver);
   }
 
-  public redo(reviver?: tReviver): any {
+  redo(reviver?: tReviver): any {
     if (this.#future.length > 0) {
       const e: tIndexable = Undo.applyEdit(
         this.#future.shift()!,
@@ -136,7 +136,7 @@ export default class Undo implements iUndo {
     return this.#recover(this.#present, reviver);
   }
 
-  public static diffScript(older: tIndexable, newer: tIndexable): iScript[] {
+  static diffScript(older: tIndexable, newer: tIndexable): iScript[] {
     let result: iScript[] = [];
 
     worker(older, newer);
@@ -229,7 +229,7 @@ export default class Undo implements iUndo {
     }
   }
 
-  public static applyEdit(script: iScript[], older: tIndexable): tIndexable {
+  static applyEdit(script: iScript[], older: tIndexable): tIndexable {
     let i: number = 0,
       res: tIndexable = [];
 
@@ -251,17 +251,21 @@ export default class Undo implements iUndo {
     return typeof older === "string" ? res.join("") : res;
   }
 
-  public static jsonSort(json: string): string {
-    const mo: any = JSON.parse(json);
-
-    if (typeof mo === "object") {
-      const type: tString = Undo.#getType(mo),
-        map: Map<any, any> = traverseObject(mo);
-      return type === "A"
-        ? `[\n${traverseMap(map, type)}\n]`
-        : `{\n${traverseMap(map, type)}\n}`;
+  static jsonSort(
+    data: any,
+    replacer?: tReplacer,
+    spacer: number | string = 1
+  ): string {
+    if (typeof data === "object") {
+      const type: tString = Undo.#getType(data),
+        ao: string = traverseMap(traverseObject(data), type);
+      return JSON.stringify(
+        JSON.parse(type === "A" ? `[${ao}]` : `{${ao}}`),
+        replacer,
+        spacer
+      );
     } else {
-      return json;
+      return data;
     }
 
     function traverseObject(object: Object): Map<any, any> {
@@ -290,15 +294,15 @@ export default class Undo implements iUndo {
         if (typeof value === "object") {
           json +=
             t === "A"
-              ? `[\n${traverseMap(value, t)}\n]`
-              : `{\n${traverseMap(value, t)}\n}`;
+              ? `[${traverseMap(value, t)}]`
+              : `{${traverseMap(value, t)}}`;
         } else {
           json +=
             typeof value === "string"
               ? `"${value.replace(/["\n\r\t\b\f\\]/g, "\\$&")}"`
               : value;
         }
-        ++i < map.size && (json += ",\n");
+        ++i < map.size && (json += ",");
       }
       return json;
     }
