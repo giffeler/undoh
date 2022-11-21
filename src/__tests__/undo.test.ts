@@ -12,8 +12,8 @@ describe("JSON", () => {
   };
 
   test("sort", () => {
-    expect(Undo.jsonSort(JSON.stringify(data))).toBe(
-      `{\n"a":[\n1,\n2,\n3\n],\n"b":34,\n"c":{\n"x":1,\n"y":"hello",\n"z":3\n}\n}`
+    expect(Undo.jsonSort(data)).toBe(
+      `{\n "a": [\n  1,\n  2,\n  3\n ],\n "b": 34,\n "c": {\n  "x": 1,\n  "y": "hello",\n  "z": 3\n }\n}`
     );
   });
 });
@@ -206,5 +206,20 @@ describe("max", () => {
     expect(undo.undo()).toStrictEqual("bcde");
     expect(undo.undo()).toStrictEqual("bcd");
     expect(undo.canUndo).toBeFalsy();
+  });
+});
+
+describe("replacer", () => {
+  const valid: string[] = ["b", "c"];
+  let undo: Undo = new Undo({ a: 1, b: 2, c: 3, d: 4 }, 10, true, valid);
+
+  test("retain", () => {
+    expect(undo.retain({ d: 4, b: 2, c: -3, a: -1, e: 0 }, valid)).toBeTruthy();
+  });
+  test("undo", () => {
+    expect(undo.undo()).toStrictEqual({ b: 2, c: 3 });
+  });
+  test("redo", () => {
+    expect(undo.redo()).toStrictEqual({ b: 2, c: -3 });
   });
 });
