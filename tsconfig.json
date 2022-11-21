@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "alwaysStrict": true,
     "declaration": true,
     "downlevelIteration": false,
     "esModuleInterop": true,
@@ -8,12 +7,12 @@
     "extendedDiagnostics": false,
     "forceConsistentCasingInFileNames": true,
     "module": "ES6",
-    "moduleResolution": "Node",
+    "moduleResolution": "NodeNext",
     "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
-    "noImplicitThis": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "outDir": "./lib",
@@ -22,12 +21,8 @@
     "skipLibCheck": false,
     "sourceMap": true,
     "strict": true,
-    "strictBindCallApply": true,
-    "strictFunctionTypes": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true,
-    "target": "ESNext"
+    "target": "ES2022"
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*"]
+  "exclude": ["node_modules", "**/__tests__/*"],
+  "files": ["src/undo.ts"]
 }
