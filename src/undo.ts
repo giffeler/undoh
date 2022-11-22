@@ -85,7 +85,7 @@ export default class Undo implements iUndo {
     );
   }
 
-get countPast(): number {
+  get countPast(): number {
     return this.#past.length;
   }
 
@@ -161,11 +161,11 @@ get countPast(): number {
           Array(Z).fill(0),
           Array(Z).fill(0),
         ];
-        for (const h of Undo.#range(Math.floor(L / 2) + (L % 2 ^ 1) + 1)) {
+        for (const h of Undo.range(Math.floor(L / 2) + (L % 2 ^ 1) + 1)) {
           for (const r of [0, 1]) {
             let [c, d, o, m]: [number[], number[], number, number] =
               r === 0 ? [g, p, 1, 1] : [p, g, 0, -1];
-            for (const k of Undo.#range(
+            for (const k of Undo.range(
               -(h - 2 * Math.max(0, h - M)),
               h - 2 * Math.max(0, h - N) + 1,
               2
@@ -218,11 +218,11 @@ get countPast(): number {
           }
         }
       } else if (N > 0) {
-        for (const n of Undo.#range(0, N)) {
+        for (const n of Undo.range(0, N)) {
           result.push({ pos: i + n });
         }
       } else {
-        for (const n of Undo.#range(0, M)) {
+        for (const n of Undo.range(0, M)) {
           result.push({ pos: i, val: newer[j + n] });
         }
       }
@@ -316,15 +316,15 @@ get countPast(): number {
     return ((n % d) + d) % d;
   }
 
-  static #range(
+  static range(
     start: number,
     end: number | null = null,
     step: number = 1
   ): number[] {
-    return [...Array(end === null ? start : Math.abs(end - start)).keys()]
-      .filter((n: number): boolean => n % step === 0)
-      .map((n: number): number =>
-        end === null ? n : start + (end < start ? -n : n)
-      );
+    return end === null
+      ? [...Array(start).keys()].filter((n: number): boolean => n % step === 0)
+      : [...Array(Math.abs(end - start)).keys()]
+          .filter((n: number): boolean => n % step === 0)
+          .map((n: number): number => start + (end < start ? -n : n));
   }
 }
