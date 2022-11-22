@@ -173,9 +173,9 @@ get countPast(): number {
               let a: number =
                   k === -h ||
                   (k !== h &&
-                    c[Undo.#modulo(k - 1, Z)] < c[Undo.#modulo(k + 1, Z)])
-                    ? c[Undo.#modulo(k + 1, Z)]
-                    : c[Undo.#modulo(k - 1, Z)] + 1,
+                    c[Undo.#modulo(k - 1, Z)]! < c[Undo.#modulo(k + 1, Z)]!)
+                    ? c[Undo.#modulo(k + 1, Z)]!
+                    : c[Undo.#modulo(k - 1, Z)]! + 1,
                 b: number = a - k;
               const [s, t]: [number, number] = [a, b];
               while (
@@ -192,7 +192,7 @@ get countPast(): number {
                 L % 2 === o &&
                 z >= -(h - o) &&
                 z <= h - o &&
-                c[Undo.#modulo(k, Z)] + d[Undo.#modulo(z, Z)] >= N
+                c[Undo.#modulo(k, Z)]! + d[Undo.#modulo(z, Z)]! >= N
               ) {
                 const [D, x, y, u, v]: [
                   number,
