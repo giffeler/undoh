@@ -1,5 +1,5 @@
 {
-  "name": "@ekadagami/undoh",
+  "name": "undoh",
   "author": "Denis Giffeler",
   "private": false,
   "license": "GPL",
@@ -19,7 +19,7 @@
     "url": "https://github.com/giffeler/undoh.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
+    "registry": "https://registry.npmjs.org",
     "access": "public"
   },
   "keywords": [
