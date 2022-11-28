@@ -1,5 +1,6 @@
 # Undoh
 
+<img align="right" src="dall_e_homer_doh.png" alt="DALL·E 2 Homer" height="150">
 Many programs, especially those with user interaction, have functions to undo or redo processing steps. Implementation usually requires providing a mechanism that produces an opposite of a particular action. These functions have an impact on an underlying data structure.
 
 This Typescript module provides an undo class that can be used to implement a simple undo/redo mechanism in programs. Text-based data structures (strings) and indexable data structures (objects) are supported.
