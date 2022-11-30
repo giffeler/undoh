@@ -1,8 +1,7 @@
 # Undoh
 
-<img align="right" src="dall_e_homer_doh.png" alt="DALL·E 2 Homer" height="150">
+<img align="right" src="dall_e_homer_doh.png" alt="Homer Simpson says »D'oh« in the style of a Rembrandt van Rijn as a charcoal drawing." height="150">
 Many programs, especially those with user interaction, have functions to undo or redo processing steps. Implementation usually requires providing a mechanism that produces an opposite of a particular action. These functions have an impact on an underlying data structure.
-
 This Typescript module provides an undo class that can be used to implement a simple undo/redo mechanism in programs. Text-based data structures (strings) and indexable data structures (objects) are supported.
 
 Since changes to individual system states are often incremental in nature, a function is provided which only records the differences in data structures between two actions (diff). To enable object comparability, complex data structures are normalized via the detour of the JSON storage format and their keys are sorted if necessary.
@@ -199,3 +198,6 @@ retain = (): void => {
   }
 }
 ```
+
+---
+"Homer Simpson" - image credits: [Denis × DALL·E](https://labs.openai.com/s/93SaZlqKiYHgA1rGeVPzwnDC)
