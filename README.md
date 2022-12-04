@@ -38,7 +38,7 @@ Undo returns a snapshot of the previous state as a result, if available. At the 
 
 The redo function can be executed if undo was called before. If there are no future states in memory, the current state is returned. If the data structure is changed after undo and saved again using retain, all values in memory for future changes with redo are lost from this point on.
 
-Since complex data structures are converted using the browser's own JSON functions, a **replacer** parameter can optionally be passed to the *constructor* and the *retain* function, and a **reviver** parameter can optionally be passed to the *undo* or *redo* function. The description of how to use the parameters can be found on the [Mozilla](https://developer.mozilla.org/) pages.
+Since complex data structures are converted using the native JSON functions, a **replacer** parameter can optionally be passed to the *constructor* and the *retain* function, and a **reviver** parameter can optionally be passed to the *undo* or *redo* function. The description of how to use the parameters can be found on the [Mozilla](https://developer.mozilla.org/) pages.
 
 ## Interface
 
@@ -46,7 +46,7 @@ Since complex data structures are converted using the browser's own JSON functio
 type tIndexable = string | any[];
 type tString = Capitalize<string>;
 type tReviver = (key?: string, value?: any) => any;
-type tReplacer =  any;
+type tReplacer = any;
 
 interface iScript {
   pos: number;
@@ -78,9 +78,20 @@ interface iScript {
 - static applyEdit(script: iScript[], older: tIndexable): tIndexable;
 - static jsonSort(data: any): string;
 
-## Example
+## Examples
 
-The following example script shows how easy it is to use the Undoh class. A total of four HTML buttons are created. The upper two are linked to the *undo* and *redo* function. The lower two buttons *create* or *remove* text input fields. Between one and a maximum of five text input fields can be created. The creation or deletion of a field and the modification of its content can be undone or redone.
+Here is a simple example to illustrate the principle of operation. After execution, the console should display "def" followed by "ghi".
+
+```javascript
+import Undo from "undoh";
+let buffer = new Undo("");
+buffer.retain("def");
+buffer.retain("ghi");
+console.log(buffer.undo());
+console.log(buffer.redo());
+```
+
+The following example script shows how easy it is to use the Undoh class in a DOM environment. A total of four HTML buttons are created. The upper two are linked to the *undo* and *redo* function. The lower two buttons *create* or *remove* text input fields. Between one and a maximum of five text input fields can be created. The creation or deletion of a field and the modification of its content can be undone or redone.
 
 Try it here: [Stackblitz online example](https://stackblitz.com/edit/typescript-undoh?file=index.ts)
 
