@@ -65,7 +65,7 @@ export default class Undo implements iUndo {
       : (this.#keysort
           ? Undo.jsonSort(data, replacer, 1)
           : JSON.stringify(data, replacer, 1)
-        ).split(/\s+$/m); // \s*$\s*
+        ).split(/^\s*/m); // \s*$\s* \s+$
   }
 
   #recover(data: tIndexable, reviver?: tReviver): any {
