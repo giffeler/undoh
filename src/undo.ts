@@ -65,7 +65,7 @@ export default class Undo implements iUndo {
       : (this.#keysort
           ? Undo.jsonSort(data, replacer, 1)
           : JSON.stringify(data, replacer, 1)
-        ).split(/^\s*/m); // \s*$\s* \s+$
+        ).split(/^\s*/m);
   }
 
   #recover(data: tIndexable, reviver?: tReviver): any {
@@ -308,23 +308,23 @@ export default class Undo implements iUndo {
     }
   }
 
+  static range(
+    start: number,
+    end: number | null = null,
+    step: number = 1
+  ): number[] {
+    [start, end] = end === null ? [0, start - 1] : [start, end - 1];
+    return Array.from(
+      { length: Math.floor((end - start) / step) + 1 },
+      (_: never, i: number) => start + i * step
+    );
+  }
+
   static #getType(data: any): tString {
     return Object.prototype.toString.call(data)[8] as tString;
   }
 
   static #modulo(n: number, d: number): number {
     return ((n % d) + d) % d;
-  }
-
-  static range(
-    start: number,
-    end: number | null = null,
-    step: number = 1
-  ): number[] {
-    return end === null
-      ? [...Array(start).keys()].filter((n: number): boolean => n % step === 0)
-      : [...Array(Math.abs(end - start)).keys()]
-          .filter((n: number): boolean => n % step === 0)
-          .map((n: number): number => start + (end < start ? -n : n));
   }
 }
