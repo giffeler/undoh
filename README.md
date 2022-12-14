@@ -21,7 +21,8 @@ Static **utility functions** are:
 
 - Sorting by keys of a possibly nested JSON data structure;
 - Determining differences (replace, insert, delete) between two texts or arrays;
-- The conversion of a text based on the previously identified differences.
+- The conversion of a text based on the previously identified differences;
+- A range operator similar to Python's.
 
 Information about the **state** of the stack memory:
 
@@ -32,11 +33,11 @@ Information about the **state** of the stack memory:
 
 ## How to use
 
-To save the current state as a snapshot a value is passed to the retain function. The data type of the passed value must be the same as the one specified when the constructor was initialized. If the constructor is initialized with a string, retain cannot be called with an array, for example.
+To save the current state as a snapshot a value is passed to the *retain* function. The data type of the passed value must be the same as the one specified when the constructor was initialized. If the constructor is initialized with a string, retain cannot be called with an array, for example.
 
-Undo returns a snapshot of the previous state as a result, if available. At the same time the current state is written into the buffer for redo actions. If there are no (more) previous states in memory, the current state is returned.
+*Undo* returns a snapshot of the previous state as a result, if available. At the same time the current state is written into the buffer for *redo* actions. If there are no (more) previous states in memory, the current state is returned.
 
-The redo function can be executed if undo was called before. If there are no future states in memory, the current state is returned. If the data structure is changed after undo and saved again using retain, all values in memory for future changes with redo are lost from this point on.
+The *redo* function can be executed if *undo* was called before. If there are no future states in memory, the current state is returned. If the data structure is changed after *undo* and saved again using *retain*, all values in memory for future changes with *redo* are lost from this point on.
 
 Since complex data structures are converted using the native JSON functions, a **replacer** parameter can optionally be passed to the *constructor* and the *retain* function, and a **reviver** parameter can optionally be passed to the *undo* or *redo* function. The description of how to use the parameters can be found on the [Mozilla](https://developer.mozilla.org/) pages.
 
@@ -55,7 +56,7 @@ interface iScript {
 ```
 
 - constructor(data: any, max?: number, objKeySort?: boolean, replacer?: tReplacer);
-  - data: Initializer. The retain function compares the first element to be filed with this value.
+  - data: Initializer. The *retain* function compares the first element to be filed with this value.
   - max (opt): How many operations can be undone?
   - objKeySort (opt): Sort objects in ascending order according to the key.
   - replacer (opt): Applied to the initializer if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#the_replacer_parameter)
@@ -74,9 +75,10 @@ interface iScript {
 - redo(reviver?: tReviver): any;
   - reviver (opt): Applied to this first redo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#using_the_reviver_parameter)
 
-- static diffScript(older: tIndexable, newer: tIndexable): iScript[];
+- static [diffScript](https://github.com/giffeler/undoh/wiki/Remainder-operator-vs.-modulo-operator)(older: tIndexable, newer: tIndexable): iScript[];
 - static applyEdit(script: iScript[], older: tIndexable): tIndexable;
 - static jsonSort(data: any): string;
+- static range(start: number, end?: number, step?: number = 1);
 
 ## Examples
 
