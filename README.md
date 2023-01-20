@@ -44,18 +44,18 @@ Since complex data structures are converted using the native JSON functions, a *
 ## Interface
 
 ```typescript
-type tIndexable = string | any[];
 type tString = Capitalize<string>;
-type tReviver = (key?: string, value?: any) => any;
+type tIndexable = string | any[];
+type tReviver = (key: string, value: any) => any;
 type tReplacer = any;
 
 interface iScript {
   pos: number;
-  val?: any;
+  val?: string[] | string;
 }
 ```
 
-- constructor(data: any, max?: number, objKeySort?: boolean, replacer?: tReplacer);
+- constructor(data: T, max?: number, objKeySort?: boolean, replacer?: tReplacer);
   - data: Initializer. The *retain* function compares the first element to be filed with this value.
   - max (opt): How many operations can be undone?
   - objKeySort (opt): Sort objects in ascending order according to the key.
@@ -66,13 +66,13 @@ interface iScript {
 - get canUndo(): boolean;
 - get canRedo(): boolean;
 
-- retain(data: any, replacer?: tReplacer): boolean;
+- retain(data: T, replacer?: tReplacer): boolean;
   - data: The data type must correspond to that of the initializer.
   - replacer (opt): Applied to data if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#the_replacer_parameter)
 
-- undo(reviver?: tReviver): any;
+- undo(reviver?: tReviver): T;
   - reviver (opt): Applied to this first undo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#using_the_reviver_parameter)
-- redo(reviver?: tReviver): any;
+- redo(reviver?: tReviver): T;
   - reviver (opt): Applied to this first redo-element if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#using_the_reviver_parameter)
 
 - static [diffScript](https://github.com/giffeler/undoh/wiki/Remainder-operator-vs.-modulo-operator)(older: tIndexable, newer: tIndexable): iScript[];
@@ -112,6 +112,8 @@ Try it here: [Stackblitz online example](https://stackblitz.com/edit/typescript-
 </html>
 ```
 
+The constructor is instantiated with a type in the form Undo&lt;type&gt;. This is an incompatible extension compared to versions earlier than 1.2.
+
 ### example.ts
 
 ```typescript
@@ -122,7 +124,7 @@ type idval = { id: string; value: string };
 const minInput: number = 1,
   maxInput: number = 5;
 
-let buffer: Undo;
+let buffer: Undo<idval>;
 
 const add: HTMLButtonElement = document.createElement("button"),
   remove: HTMLButtonElement = document.createElement("button"),

@@ -17,36 +17,36 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-type tIndexable = string | any[];
 type tString = Capitalize<string>;
-type tReviver = (key?: string, value?: any) => any;
+type tIndexable = string | any[];
+type tReviver = (key: string, value: any) => any;
 type tReplacer = any;
 
 interface iScript {
-  pos: number;
-  val?: any;
+  readonly pos: number;
+  readonly val?: string[] | string;
 }
 
-interface iUndo {
+interface iUndo<T> {
   get countPast(): number;
   get countFuture(): number;
   get canUndo(): boolean;
   get canRedo(): boolean;
-  retain(data: any, replacer?: tReplacer): boolean;
-  undo(reviver?: tReviver): any;
-  redo(reviver?: tReviver): any;
+  retain(data: T, replacer?: tReplacer): boolean;
+  undo(reviver?: tReviver): T;
+  redo(reviver?: tReviver): T;
 }
 
-export default class Undo implements iUndo {
+export default class Undo<T> implements iUndo<T> {
   readonly #type: tString;
   readonly #max: number;
   readonly #keysort: boolean;
-  #present: tIndexable;
+  #present: string[] | string;
   #past: iScript[][];
   #future: iScript[][];
 
   constructor(
-    data: any,
+    data: T,
     max: number = 100,
     objKeySort: boolean = false,
     replacer: any = null
@@ -59,7 +59,7 @@ export default class Undo implements iUndo {
     this.#future = [];
   }
 
-  #prepare(data: any, replacer?: tReplacer): tIndexable {
+  #prepare(data: T, replacer?: tReplacer): string[] | string {
     return typeof data === "string"
       ? structuredClone(data)
       : (this.#keysort
@@ -68,20 +68,20 @@ export default class Undo implements iUndo {
         ).split(/^\s*/m);
   }
 
-  #recover(data: tIndexable, reviver?: tReviver): any {
+  #recover(data: string[] | string, reviver?: tReviver): T {
     return typeof data === "string"
       ? structuredClone(data)
       : JSON.parse(data.join(""), reviver);
   }
 
-  #hasChanged(data: tIndexable): boolean {
+  #hasChanged(data: string[] | string): boolean {
     return (
       this.#past.length === 0 ||
       this.#present.length !== data.length ||
       (typeof data === "string"
         ? this.#present !== data
         : data.length === 0 ||
-          data.some((v: any, i: number) => v !== this.#present[i]))
+          data.some((v: string, i: number) => v !== this.#present[i]))
     );
   }
 
@@ -101,9 +101,9 @@ export default class Undo implements iUndo {
     return this.#future.length > 0;
   }
 
-  retain(data: any, replacer?: tReplacer): boolean {
+  retain(data: T, replacer?: tReplacer): boolean {
     if (this.#type === Undo.#getType(data)) {
-      const md: tIndexable = this.#prepare(data, replacer);
+      const md: string[] | string = this.#prepare(data, replacer);
       if (this.#hasChanged(md)) {
         this.#past.length === this.#max && this.#past.shift();
         this.#past.push(Undo.diffScript(md, this.#present));
@@ -115,7 +115,7 @@ export default class Undo implements iUndo {
     return false;
   }
 
-  undo(reviver?: tReviver): any {
+  undo(reviver?: tReviver): T {
     if (this.#past.length > 0) {
       const e: tIndexable = Undo.applyEdit(this.#past.pop()!, this.#present);
       this.#future.unshift(Undo.diffScript(e, this.#present));
@@ -124,7 +124,7 @@ export default class Undo implements iUndo {
     return this.#recover(this.#present, reviver);
   }
 
-  redo(reviver?: tReviver): any {
+  redo(reviver?: tReviver): T {
     if (this.#future.length > 0) {
       const e: tIndexable = Undo.applyEdit(
         this.#future.shift()!,
@@ -263,7 +263,7 @@ export default class Undo implements iUndo {
         JSON.parse(type === "A" ? `[${ao}]` : `{${ao}}`),
         replacer,
         spacer
-      );
+      )!;
     } else {
       return data;
     }

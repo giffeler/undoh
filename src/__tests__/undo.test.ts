@@ -68,7 +68,7 @@ describe("diff array", () => {
 
 describe("string", () => {
   let str: string;
-  let undo: Undo;
+  let undo: Undo<string>;
 
   beforeEach(() => {
     str = "";
@@ -95,7 +95,7 @@ describe("string", () => {
 
 describe("number[]", () => {
   let num: number[] = [4711, -2, 88, 69];
-  let undo: Undo = new Undo(num);
+  let undo: Undo<number[]> = new Undo(num);
 
   test("getters empty", () => {
     expect(undo.canUndo).toBeFalsy();
@@ -111,9 +111,9 @@ describe("number[]", () => {
     expect(undo.countPast).toBe(1);
   });
 
-  test("retain type", () => {
+  /*test("retain type", () => {
     expect(undo.retain("hello")).toBeFalsy();
-  });
+  });*/
 
   test("undo", () => {
     num[0] = 0;
@@ -154,7 +154,7 @@ describe("number[]", () => {
 });
 
 describe("object", () => {
-  let undo: Undo = new Undo({ one: 1, two: 2, three: "drei" }, 5, true);
+  let undo: Undo<Object> = new Undo({ one: 1, two: 2, three: "drei" }, 5, true);
 
   test("sort", () => {
     expect(undo.retain({ two: 2, three: 3, one: 1, four: 4 })).toBeTruthy();
@@ -172,7 +172,7 @@ describe("object", () => {
 });
 
 describe("array of objects", () => {
-  let undo: Undo = new Undo([], 10);
+  let undo: Undo<Object> = new Undo([], 10);
 
   test("retain", () => {
     expect(
@@ -196,7 +196,7 @@ describe("array of objects", () => {
 
 describe("max", () => {
   const max: number = 2;
-  let undo: Undo = new Undo("abc", max);
+  let undo: Undo<string> = new Undo("abc", max);
 
   test("overflow", () => {
     expect(undo.retain("bcd")).toBeTruthy();
@@ -211,7 +211,7 @@ describe("max", () => {
 
 describe("replacer", () => {
   const valid: string[] = ["b", "c"];
-  let undo: Undo = new Undo({ a: 1, b: 2, c: 3, d: 4 }, 10, true, valid);
+  let undo: Undo<Object> = new Undo({ a: 1, b: 2, c: 3, d: 4 }, 10, true, valid);
 
   test("retain", () => {
     expect(undo.retain({ d: 4, b: 2, c: -3, a: -1, e: 0 }, valid)).toBeTruthy();
