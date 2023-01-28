@@ -1,6 +1,6 @@
 /*
  * undoh.ts - Undo functionality for data-structures
- * Copyright © 2022, Denis Giffeler
+ * Copyright © 2023, Denis Giffeler
  * Python diff algorithm: <https://blog.robertelder.org/diff-algorithm/>.
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -45,6 +45,26 @@ export default class Undo<T> implements iUndo<T> {
   #past: iScript[][];
   #future: iScript[][];
 
+  static readonly modulo: Function = new WebAssembly.Instance(
+    /*
+    (module
+      (func $modulo (param $n i32) (param $d i32) (result i32)
+        (i32.rem_s (local.get $n) (local.get $d))
+        (i32.add (local.get $d))
+        (i32.rem_s (local.get $d))
+      )
+      (export "modulo" (func 0))
+    )
+    */
+    new WebAssembly.Module(
+      new Uint8Array([
+        0, 97, 115, 109, 1, 0, 0, 0, 1, 7, 1, 96, 2, 127, 127, 1, 127, 3, 2, 1,
+        0, 7, 10, 1, 6, 109, 111, 100, 117, 108, 111, 0, 0, 10, 15, 1, 13, 0,
+        32, 0, 32, 1, 111, 32, 1, 106, 32, 1, 111, 11,
+      ])
+    )
+  ).exports["modulo"] as Function;
+
   constructor(
     data: T,
     max: number = 100,
@@ -57,32 +77,6 @@ export default class Undo<T> implements iUndo<T> {
     this.#present = this.#prepare(data, replacer);
     this.#past = [];
     this.#future = [];
-  }
-
-  #prepare(data: T, replacer?: tReplacer): string[] | string {
-    return typeof data === "string"
-      ? structuredClone(data)
-      : (this.#keysort
-          ? Undo.jsonSort(data, replacer, 1)
-          : JSON.stringify(data, replacer, 1)
-        ).split(/^\s*/m);
-  }
-
-  #recover(data: string[] | string, reviver?: tReviver): T {
-    return typeof data === "string"
-      ? structuredClone(data)
-      : JSON.parse(data.join(""), reviver);
-  }
-
-  #hasChanged(data: string[] | string): boolean {
-    return (
-      this.#past.length === 0 ||
-      this.#present.length !== data.length ||
-      (typeof data === "string"
-        ? this.#present !== data
-        : data.length === 0 ||
-          data.some((v: string, i: number) => v !== this.#present[i]))
-    );
   }
 
   get countPast(): number {
@@ -101,7 +95,7 @@ export default class Undo<T> implements iUndo<T> {
     return this.#future.length > 0;
   }
 
-  retain(data: T, replacer?: tReplacer): boolean {
+  public retain(data: T, replacer?: tReplacer): boolean {
     if (this.#type === Undo.#getType(data)) {
       const md: string[] | string = this.#prepare(data, replacer);
       if (this.#hasChanged(md)) {
@@ -115,18 +109,18 @@ export default class Undo<T> implements iUndo<T> {
     return false;
   }
 
-  undo(reviver?: tReviver): T {
+  public undo(reviver?: tReviver): T {
     if (this.#past.length > 0) {
-      const e: tIndexable = Undo.applyEdit(this.#past.pop()!, this.#present);
+      const e: tIndexable = this.applyEdit(this.#past.pop()!, this.#present);
       this.#future.unshift(Undo.diffScript(e, this.#present));
       this.#present = e;
     }
     return this.#recover(this.#present, reviver);
   }
 
-  redo(reviver?: tReviver): T {
+  public redo(reviver?: tReviver): T {
     if (this.#future.length > 0) {
-      const e: tIndexable = Undo.applyEdit(
+      const e: tIndexable = this.applyEdit(
         this.#future.shift()!,
         this.#present
       );
@@ -173,9 +167,9 @@ export default class Undo<T> implements iUndo<T> {
               let a: number =
                   k === -h ||
                   (k !== h &&
-                    c[Undo.#modulo(k - 1, Z)]! < c[Undo.#modulo(k + 1, Z)]!)
-                    ? c[Undo.#modulo(k + 1, Z)]!
-                    : c[Undo.#modulo(k - 1, Z)]! + 1,
+                    c[Undo.modulo(k - 1, Z)]! < c[Undo.modulo(k + 1, Z)]!)
+                    ? c[Undo.modulo(k + 1, Z)]!
+                    : c[Undo.modulo(k - 1, Z)]! + 1,
                 b: number = a - k;
               const [s, t]: [number, number] = [a, b];
               while (
@@ -187,12 +181,12 @@ export default class Undo<T> implements iUndo<T> {
                 [a, b] = [a + 1, b + 1];
               }
               const z: number = -(k - w);
-              c[Undo.#modulo(k, Z)] = a;
+              c[Undo.modulo(k, Z)] = a;
               if (
                 L % 2 === o &&
                 z >= -(h - o) &&
                 z <= h - o &&
-                c[Undo.#modulo(k, Z)]! + d[Undo.#modulo(z, Z)]! >= N
+                c[Undo.modulo(k, Z)]! + d[Undo.modulo(z, Z)]! >= N
               ) {
                 const [D, x, y, u, v]: [
                   number,
@@ -229,7 +223,7 @@ export default class Undo<T> implements iUndo<T> {
     }
   }
 
-  static applyEdit(script: iScript[], older: tIndexable): tIndexable {
+  public applyEdit(script: iScript[], older: tIndexable): tIndexable {
     let i: number = 0,
       res: tIndexable = [];
 
@@ -257,8 +251,8 @@ export default class Undo<T> implements iUndo<T> {
     spacer: number | string = 1
   ): string {
     if (typeof data === "object") {
-      const type: tString = Undo.#getType(data),
-        ao: string = traverseMap(traverseObject(data), type);
+      const type: tString = this.#getType(data),
+        ao: string = this.#traverseMap(this.#traverseObject(data), type);
       return JSON.stringify(
         JSON.parse(type === "A" ? `[${ao}]` : `{${ao}}`),
         replacer,
@@ -267,45 +261,71 @@ export default class Undo<T> implements iUndo<T> {
     } else {
       return data;
     }
+  }
 
-    function traverseObject(object: Object): Map<any, any> {
-      let map: Map<any, any> = new Map();
+  static #traverseObject(object: Object): Map<any, any> {
+    let map: Map<any, any> = new Map();
 
-      for (const [key, value] of Object.entries(object).sort()) {
-        const type: tString = Undo.#getType(value);
-        map.set(
-          key + type,
-          typeof value === "object"
-            ? traverseObject(type === "A" ? value.sort() : value)
-            : value
-        );
-      }
-      return map;
+    for (const [key, value] of Object.entries(object).sort()) {
+      const type: tString = this.#getType(value);
+      map.set(
+        key + type,
+        typeof value === "object"
+          ? this.#traverseObject(type === "A" ? value.sort() : value)
+          : value
+      );
     }
+    return map;
+  }
 
-    function traverseMap(map: Map<any, any>, type: tString): string {
-      let i: number = 0,
-        json: string = "";
+  static #traverseMap(map: Map<any, any>, type: tString): string {
+    let i: number = 0,
+      json: string = "";
 
-      for (const [key, value] of map.entries()) {
-        const k: string = key.slice(0, -1),
-          t: tString = key.slice(-1);
-        type !== "A" && (json += `"${k}":`);
-        if (typeof value === "object") {
-          json +=
-            t === "A"
-              ? `[${traverseMap(value, t)}]`
-              : `{${traverseMap(value, t)}}`;
-        } else {
-          json +=
-            typeof value === "string"
-              ? `"${value.replace(/["\n\r\t\b\f\\]/g, "\\$&")}"`
-              : value;
-        }
-        ++i < map.size && (json += ",");
+    for (const [key, value] of map.entries()) {
+      const k: string = key.slice(0, -1),
+        t: tString = key.slice(-1);
+      type !== "A" && (json += `"${k}":`);
+      if (typeof value === "object") {
+        json +=
+          t === "A"
+            ? `[${this.#traverseMap(value, t)}]`
+            : `{${this.#traverseMap(value, t)}}`;
+      } else {
+        json +=
+          typeof value === "string"
+            ? `"${value.replace(/["\n\r\t\b\f\\]/g, "\\$&")}"`
+            : value;
       }
-      return json;
+      ++i < map.size && (json += ",");
     }
+    return json;
+  }
+
+  #prepare(data: T, replacer?: tReplacer): string[] | string {
+    return typeof data === "string"
+      ? structuredClone(data)
+      : (this.#keysort
+          ? Undo.jsonSort(data, replacer, 1)
+          : JSON.stringify(data, replacer, 1)
+        ).split(/^\s*/m);
+  }
+
+  #recover(data: string[] | string, reviver?: tReviver): T {
+    return typeof data === "string"
+      ? structuredClone(data)
+      : JSON.parse(data.join(""), reviver);
+  }
+
+  #hasChanged(data: string[] | string): boolean {
+    return (
+      this.#past.length === 0 ||
+      this.#present.length !== data.length ||
+      (typeof data === "string"
+        ? this.#present !== data
+        : data.length === 0 ||
+          data.some((v: string, i: number) => v !== this.#present[i]))
+    );
   }
 
   static range(
@@ -322,9 +342,5 @@ export default class Undo<T> implements iUndo<T> {
 
   static #getType(data: any): tString {
     return Object.prototype.toString.call(data)[8] as tString;
-  }
-
-  static #modulo(n: number, d: number): number {
-    return ((n % d) + d) % d;
   }
 }
