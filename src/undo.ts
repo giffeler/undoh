@@ -46,16 +46,6 @@ export default class Undo<T> implements iUndo<T> {
   #future: iScript[][];
 
   static readonly modulo: Function = new WebAssembly.Instance(
-    /*
-    (module
-      (func $modulo (param $n i32) (param $d i32) (result i32)
-        (i32.rem_s (local.get $n) (local.get $d))
-        (i32.add (local.get $d))
-        (i32.rem_s (local.get $d))
-      )
-      (export "modulo" (func 0))
-    )
-    */
     new WebAssembly.Module(
       new Uint8Array([
         0, 97, 115, 109, 1, 0, 0, 0, 1, 7, 1, 96, 2, 127, 127, 1, 127, 3, 2, 1,
