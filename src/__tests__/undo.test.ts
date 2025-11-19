@@ -244,3 +244,18 @@ describe("replacer", () => {
     expect(undo.redo()).toStrictEqual({ b: 2, c: -3 });
   });
 });
+
+describe("documentation contract", () => {
+  test("README quickstart works", () => {
+    const buffer: Undo<string> = new Undo("");
+    buffer.retain("def");
+    buffer.retain("ghi");
+    expect(buffer.undo()).toBe("def");
+    expect(buffer.redo()).toBe("ghi");
+  });
+
+  test("applyEdit remains available as a static helper", () => {
+    const script = Undo.diffScript("abc", "adc");
+    expect(Undo.applyEdit(script, "abc")).toBe("adc");
+  });
+});

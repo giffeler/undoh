@@ -101,7 +101,7 @@ export default class Undo<T> implements iUndo<T> {
 
   public undo(reviver?: tReviver): T {
     if (this.#past.length > 0) {
-      const e: tIndexable = this.applyEdit(this.#past.pop()!, this.#present);
+      const e: tIndexable = Undo.applyEdit(this.#past.pop()!, this.#present);
       this.#future.unshift(Undo.diffScript(e, this.#present));
       this.#present = e;
     }
@@ -110,7 +110,7 @@ export default class Undo<T> implements iUndo<T> {
 
   public redo(reviver?: tReviver): T {
     if (this.#future.length > 0) {
-      const e: tIndexable = this.applyEdit(
+      const e: tIndexable = Undo.applyEdit(
         this.#future.shift()!,
         this.#present
       );
@@ -213,7 +213,7 @@ export default class Undo<T> implements iUndo<T> {
     }
   }
 
-  public applyEdit(script: iScript[], older: tIndexable): tIndexable {
+  public static applyEdit(script: iScript[], older: tIndexable): tIndexable {
     let i: number = 0,
       res: tIndexable = [];
 
