@@ -8,6 +8,10 @@ Since changes to individual system states are often incremental in nature, a fun
 
 Data is kept in memory only if it differs from its direct predecessor.
 
+## Runtime compatibility policy
+
+Undoh uses the native [`structuredClone`](https://developer.mozilla.org/en-US/docs/Web/API/structuredClone) API internally to capture and restore buffer states without mutating the original inputs. The cloning guarantees provided by this API are crucial for preserving nested data structures and transferable objects when applying diffs, so we intentionally rely on the platform implementation rather than maintaining a bespoke fallback. As a result, we only support **evergreen browsers released in 2022 or later (Chrome/Edge ≥ 98, Firefox ≥ 94, Safari ≥ 15.4)** and **Node.js ≥ 17.0**—the first runtimes that expose `structuredClone` with complete feature parity. Older environments lack this API or ship partial implementations, which can corrupt undo/redo history or silently drop complex values. If you need to target legacy runtimes, consider transpiling your application bundle and providing your own cloning shim before using Undoh, but note that such setups are outside this project's support scope.
+
 ## What can be done
 
 Essentially, four **operations** are provided:
