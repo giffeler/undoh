@@ -148,7 +148,8 @@ describe("number[]", () => {
     expect(undo.countFuture).toBe(2);
     num[1] = 20;
     expect(undo.retain(num)).toBeTruthy();
-    expect(undo.canRedo).toBeFalsy;
+    expect(undo.canRedo).toBeFalsy();
+    expect(undo.countFuture).toBe(0);
     expect(num).toStrictEqual([0, 20, 3.14, 69]);
   });
 });
