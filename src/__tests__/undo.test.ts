@@ -18,6 +18,26 @@ describe("JSON", () => {
   });
 });
 
+describe("objKeySort edge cases", () => {
+  test("handles null values", () => {
+    const payload: Object = { beta: null, alpha: { gamma: null } };
+    expect(JSON.parse(Undo.jsonSort(payload))).toStrictEqual({
+      alpha: { gamma: null },
+      beta: null,
+    });
+  });
+
+  test("preserves array order", () => {
+    const payload: { list: number[]; nested: { values: string[] } } = {
+      list: [3, 1, 2],
+      nested: { values: ["c", "a", "b"] },
+    };
+    const snapshot = JSON.parse(JSON.stringify(payload));
+    Undo.jsonSort(payload);
+    expect(payload).toStrictEqual(snapshot);
+  });
+});
+
 describe("diff string", () => {
   test("empty", () => {
     expect(Undo.diffScript("", "")).toStrictEqual([]);

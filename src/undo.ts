@@ -240,17 +240,16 @@ export default class Undo<T> implements iUndo<T> {
     replacer?: tReplacer,
     spacer: number | string = 1
   ): string {
-    if (typeof data === "object") {
-      const type: tString = this.#getType(data),
-        ao: string = this.#traverseMap(this.#traverseObject(data), type);
-      return JSON.stringify(
-        JSON.parse(type === "A" ? `[${ao}]` : `{${ao}}`),
-        replacer,
-        spacer
-      )!;
-    } else {
-      return data;
+    if (data === null || typeof data !== "object") {
+      return JSON.stringify(data, replacer, spacer) ?? "";
     }
+    const type: tString = this.#getType(data),
+      ao: string = this.#traverseMap(this.#traverseObject(data), type);
+    return JSON.stringify(
+      JSON.parse(type === "A" ? `[${ao}]` : `{${ao}}`),
+      replacer,
+      spacer
+    )!;
   }
 
   static #traverseObject(object: Object): Map<any, any> {
@@ -258,10 +257,13 @@ export default class Undo<T> implements iUndo<T> {
 
     for (const [key, value] of Object.entries(object).sort()) {
       const type: tString = this.#getType(value);
+      const isTraversable: boolean = value !== null && typeof value === "object";
       map.set(
         key + type,
-        typeof value === "object"
-          ? this.#traverseObject(type === "A" ? value.sort() : value)
+        isTraversable
+          ? this.#traverseObject(
+              type === "A" ? [...(value as any[])].sort() : value
+            )
           : value
       );
     }
@@ -276,7 +278,7 @@ export default class Undo<T> implements iUndo<T> {
       const k: string = key.slice(0, -1),
         t: tString = key.slice(-1);
       type !== "A" && (json += `"${k}":`);
-      if (typeof value === "object") {
+      if (value !== null && typeof value === "object") {
         json +=
           t === "A"
             ? `[${this.#traverseMap(value, t)}]`
