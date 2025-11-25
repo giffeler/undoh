@@ -2,12 +2,20 @@
   "name": "undoh",
   "author": "Denis Giffeler",
   "private": false,
+  "type": "module",
   "license": "GPL",
   "version": "1.3.0",
   "description": "This Typescript module provides an undo class that can be used to implement a simple undo/redo mechanism.",
   "main": "lib/undo.js",
   "types": "lib/undo.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/undo.js",
+      "types": "./lib/undo.d.ts"
+    }
+  },
   "scripts": {
+    "prepack": "npm run build",
     "test": "jest --config jestconfig.json",
     "build": "tsc",
     "prepare": "npm run build",
