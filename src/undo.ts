@@ -305,8 +305,8 @@ export default class Undo<T> implements iUndo<T> {
 
   #recover(data: string[] | string, reviver?: tReviver): T {
     return typeof data === "string"
-      ? structuredClone(data)
-      : JSON.parse(data.join(""), reviver);
+      ? (structuredClone(data) as T)
+      : (JSON.parse(data.join(""), reviver) as T);
   }
 
   #hasChanged(data: string[] | string): boolean {
