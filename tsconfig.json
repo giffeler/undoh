@@ -21,7 +21,8 @@
     "skipLibCheck": false,
     "sourceMap": true,
     "strict": true,
-    "target": "ES2022"
+    "target": "ES2022",
+    "types": []
   },
   "exclude": ["node_modules", "**/__tests__/*"],
   "files": ["src/undo.ts"]

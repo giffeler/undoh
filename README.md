@@ -12,6 +12,26 @@ Data is kept in memory only if it differs from its direct predecessor.
 
 Undoh uses the native [`structuredClone`](https://developer.mozilla.org/en-US/docs/Web/API/structuredClone) API internally to capture and restore buffer states without mutating the original inputs. The cloning guarantees provided by this API are crucial for preserving nested data structures and transferable objects when applying diffs, so we intentionally rely on the platform implementation rather than maintaining a bespoke fallback. As a result, we only support **evergreen browsers released in 2022 or later (Chrome/Edge ≥ 98, Firefox ≥ 94, Safari ≥ 15.4)** and **Node.js ≥ 17.0**—the first runtimes that expose `structuredClone` with complete feature parity. Older environments lack this API or ship partial implementations, which can corrupt undo/redo history or silently drop complex values. If you need to target legacy runtimes, consider transpiling your application bundle and providing your own cloning shim before using Undoh, but note that such setups are outside this project's support scope.
 
+## Development and tooling
+
+Dependency baseline updated on **March 1, 2026**:
+
+- TypeScript: `^5.9.3`
+- Jest: `^29.7.0`
+- jest-util: `^29.7.0` (required by `ts-jest` runtime integration)
+- ts-jest: `^29.4.6`
+- ESLint: `^10.0.2`
+- Prettier: `^3.8.1`
+- @types/jest: `^29.5.14`
+
+Common local commands:
+
+```bash
+npm ci
+npm run build
+npm test
+```
+
 ## What can be done
 
 Essentially, four **operations** are provided:

@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Test output
+coverage/
+.nyc_output/
+
+# Build/cache artifacts
+*.tsbuildinfo
+.tmp/
+tmp/
+temp/
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files (keep templates)
+.env
+.env.*
+!.env.example
+
+# Local overrides
+*.local
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
