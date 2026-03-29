@@ -1,23 +1,26 @@
-name: Publish Package
+name: CI
 
 on:
   push:
-    tags:
-      - "v*"
-
-permissions:
-  id-token: write
-  contents: read
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  publish:
+  validate:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 20.19.0
+          - 22
+          - 24
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 20.19.0
-          registry-url: https://registry.npmjs.org
+          node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
       - run: npm run format:check
@@ -25,4 +28,3 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: npm publish --provenance

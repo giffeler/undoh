@@ -1,0 +1,5 @@
+lib
+node_modules
+package.json~
+modulo.wasm
+dall_e_homer_doh.png
