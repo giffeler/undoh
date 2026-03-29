@@ -1,9 +1,10 @@
-type tIndexable = string | any[];
-type tReviver = (key: string, value: any) => any;
-type tReplacer = any;
+type tDiffable = string | unknown[];
+type tReviver = NonNullable<Parameters<typeof JSON.parse>[1]>;
+type tReplacer = Parameters<typeof JSON.stringify>[1];
+type tModulo = (left: number, right: number) => number;
 interface iScript {
     readonly pos: number;
-    readonly val?: string[] | string;
+    readonly val?: unknown;
 }
 interface iUndo<T> {
     get countPast(): number;
@@ -16,8 +17,8 @@ interface iUndo<T> {
 }
 export default class Undo<T> implements iUndo<T> {
     #private;
-    static readonly modulo: Function;
-    constructor(data: T, max?: number, objKeySort?: boolean, replacer?: any);
+    static readonly modulo: tModulo;
+    constructor(data: T, max?: number, objKeySort?: boolean, replacer?: tReplacer);
     get countPast(): number;
     get countFuture(): number;
     get canUndo(): boolean;
@@ -25,9 +26,9 @@ export default class Undo<T> implements iUndo<T> {
     retain(data: T, replacer?: tReplacer): boolean;
     undo(reviver?: tReviver): T;
     redo(reviver?: tReviver): T;
-    static diffScript(older: tIndexable, newer: tIndexable): iScript[];
-    static applyEdit(script: iScript[], older: tIndexable): tIndexable;
-    static jsonSort(data: any, replacer?: tReplacer, spacer?: number | string): string;
+    static diffScript(older: tDiffable, newer: tDiffable): iScript[];
+    static applyEdit(script: iScript[], older: tDiffable): tDiffable;
+    static jsonSort(data: unknown, replacer?: tReplacer, spacer?: number | string): string;
     static range(start: number, end?: number | null, step?: number): number[];
 }
 export {};

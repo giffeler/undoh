@@ -18,13 +18,17 @@
  */
 
 type tString = Capitalize<string>;
-type tIndexable = string | any[];
-type tReviver = (key: string, value: any) => any;
-type tReplacer = any;
+type tDiffable = string | unknown[];
+type tStored = string | string[];
+type tReviver = NonNullable<Parameters<typeof JSON.parse>[1]>;
+type tReplacer = Parameters<typeof JSON.stringify>[1];
+type tModulo = (left: number, right: number) => number;
+type tTraversedMap = Map<string, tTraversedValue>;
+type tTraversedValue = tTraversedMap | unknown;
 
 interface iScript {
   readonly pos: number;
-  readonly val?: string[] | string;
+  readonly val?: unknown;
 }
 
 interface iUndo<T> {
@@ -41,25 +45,25 @@ export default class Undo<T> implements iUndo<T> {
   readonly #type: tString;
   readonly #max: number;
   readonly #keysort: boolean;
-  #present: string[] | string;
+  #present: tStored;
   #past: iScript[][];
   #future: iScript[][];
 
-  static readonly modulo: Function = new WebAssembly.Instance(
+  static readonly modulo: tModulo = new WebAssembly.Instance(
     new WebAssembly.Module(
       new Uint8Array([
         0, 97, 115, 109, 1, 0, 0, 0, 1, 7, 1, 96, 2, 127, 127, 1, 127, 3, 2, 1,
         0, 7, 10, 1, 6, 109, 111, 100, 117, 108, 111, 0, 0, 10, 15, 1, 13, 0,
         32, 0, 32, 1, 111, 32, 1, 106, 32, 1, 111, 11,
-      ])
-    )
-  ).exports["modulo"] as Function;
+      ]),
+    ),
+  ).exports["modulo"] as tModulo;
 
   constructor(
     data: T,
     max: number = 100,
     objKeySort: boolean = false,
-    replacer: any = null
+    replacer: tReplacer = null,
   ) {
     this.#type = Undo.#getType(data);
     this.#max = max;
@@ -89,7 +93,9 @@ export default class Undo<T> implements iUndo<T> {
     if (this.#type === Undo.#getType(data)) {
       const md: string[] | string = this.#prepare(data, replacer);
       if (this.#hasChanged(md)) {
-        this.#past.length === this.#max && this.#past.shift();
+        if (this.#past.length === this.#max) {
+          this.#past.shift();
+        }
         this.#past.push(Undo.diffScript(md, this.#present));
         this.#present = md;
         this.#future = [];
@@ -101,7 +107,10 @@ export default class Undo<T> implements iUndo<T> {
 
   public undo(reviver?: tReviver): T {
     if (this.#past.length > 0) {
-      const e: tIndexable = Undo.applyEdit(this.#past.pop()!, this.#present);
+      const e: tStored = Undo.applyEdit(
+        this.#past.pop()!,
+        this.#present,
+      ) as tStored;
       this.#future.unshift(Undo.diffScript(e, this.#present));
       this.#present = e;
     }
@@ -110,27 +119,27 @@ export default class Undo<T> implements iUndo<T> {
 
   public redo(reviver?: tReviver): T {
     if (this.#future.length > 0) {
-      const e: tIndexable = Undo.applyEdit(
+      const e: tStored = Undo.applyEdit(
         this.#future.shift()!,
-        this.#present
-      );
+        this.#present,
+      ) as tStored;
       this.#past.push(Undo.diffScript(e, this.#present));
       this.#present = e;
     }
     return this.#recover(this.#present, reviver);
   }
 
-  static diffScript(older: tIndexable, newer: tIndexable): iScript[] {
-    let result: iScript[] = [];
+  static diffScript(older: tDiffable, newer: tDiffable): iScript[] {
+    const result: iScript[] = [];
 
     worker(older, newer);
     return result;
 
     function worker(
-      e: tIndexable,
-      f: tIndexable,
+      e: tDiffable,
+      f: tDiffable,
       i: number = 0,
-      j: number = 0
+      j: number = 0,
     ): void {
       const [N, M, L, Z]: [number, number, number, number] = [
         e.length,
@@ -140,19 +149,19 @@ export default class Undo<T> implements iUndo<T> {
       ];
 
       if (N > 0 && M > 0) {
-        let [w, g, p]: [number, number[], number[]] = [
+        const [w, g, p]: [number, number[], number[]] = [
           N - M,
           Array(Z).fill(0),
           Array(Z).fill(0),
         ];
-        for (const h of Undo.range(Math.floor(L / 2) + (L % 2 ^ 1) + 1)) {
+        for (const h of Undo.range(Math.floor(L / 2) + ((L % 2) ^ 1) + 1)) {
           for (const r of [0, 1]) {
-            let [c, d, o, m]: [number[], number[], number, number] =
+            const [c, d, o, m]: [number[], number[], number, number] =
               r === 0 ? [g, p, 1, 1] : [p, g, 0, -1];
             for (const k of Undo.range(
               -(h - 2 * Math.max(0, h - M)),
               h - 2 * Math.max(0, h - N) + 1,
-              2
+              2,
             )) {
               let a: number =
                   k === -h ||
@@ -183,7 +192,7 @@ export default class Undo<T> implements iUndo<T> {
                   number,
                   number,
                   number,
-                  number
+                  number,
                 ] =
                   o === 1
                     ? [2 * h - 1, s, t, a, b]
@@ -213,9 +222,9 @@ export default class Undo<T> implements iUndo<T> {
     }
   }
 
-  public static applyEdit(script: iScript[], older: tIndexable): tIndexable {
-    let i: number = 0,
-      res: tIndexable = [];
+  public static applyEdit(script: iScript[], older: tDiffable): tDiffable {
+    let i: number = 0;
+    const res: unknown[] = [];
 
     for (const e of script) {
       while (e.pos > i) {
@@ -236,9 +245,9 @@ export default class Undo<T> implements iUndo<T> {
   }
 
   static jsonSort(
-    data: any,
+    data: unknown,
     replacer?: tReplacer,
-    spacer: number | string = 1
+    spacer: number | string = 1,
   ): string {
     if (data === null || typeof data !== "object") {
       return JSON.stringify(data, replacer, spacer) ?? "";
@@ -248,68 +257,73 @@ export default class Undo<T> implements iUndo<T> {
     return JSON.stringify(
       JSON.parse(type === "A" ? `[${ao}]` : `{${ao}}`),
       replacer,
-      spacer
+      spacer,
     )!;
   }
 
-  static #traverseObject(object: Object): Map<any, any> {
-    let map: Map<any, any> = new Map();
+  static #traverseObject(object: object): tTraversedMap {
+    const map: tTraversedMap = new Map();
 
     for (const [key, value] of Object.entries(object).sort()) {
       const type: tString = this.#getType(value);
-      const isTraversable: boolean = value !== null && typeof value === "object";
+      const isTraversable: boolean =
+        value !== null && typeof value === "object";
       map.set(
         key + type,
         isTraversable
           ? this.#traverseObject(
-              type === "A" ? [...(value as any[])].sort() : value
+              type === "A" ? [...(value as unknown[])].sort() : value,
             )
-          : value
+          : value,
       );
     }
     return map;
   }
 
-  static #traverseMap(map: Map<any, any>, type: tString): string {
-    let i: number = 0,
-      json: string = "";
+  static #traverseMap(map: tTraversedMap, type: tString): string {
+    let i: number = 0;
+    let json: string = "";
 
     for (const [key, value] of map.entries()) {
       const k: string = key.slice(0, -1),
-        t: tString = key.slice(-1);
-      type !== "A" && (json += `"${k}":`);
+        t: tString = key.slice(-1) as tString;
+      if (type !== "A") {
+        json += `"${k}":`;
+      }
       if (value !== null && typeof value === "object") {
         json +=
           t === "A"
-            ? `[${this.#traverseMap(value, t)}]`
-            : `{${this.#traverseMap(value, t)}}`;
+            ? `[${this.#traverseMap(value as tTraversedMap, t)}]`
+            : `{${this.#traverseMap(value as tTraversedMap, t)}}`;
       } else {
         json +=
           typeof value === "string"
             ? `"${value.replace(/["\n\r\t\b\f\\]/g, "\\$&")}"`
             : value;
       }
-      ++i < map.size && (json += ",");
+      if (++i < map.size) {
+        json += ",";
+      }
     }
     return json;
   }
 
-  #prepare(data: T, replacer?: tReplacer): string[] | string {
+  #prepare(data: T, replacer?: tReplacer): tStored {
     return typeof data === "string"
       ? structuredClone(data)
       : (this.#keysort
           ? Undo.jsonSort(data, replacer, 1)
-          : JSON.stringify(data, replacer, 1)
+          : (JSON.stringify(data, replacer, 1) ?? "")
         ).split(/^\s*/m);
   }
 
-  #recover(data: string[] | string, reviver?: tReviver): T {
+  #recover(data: tStored, reviver?: tReviver): T {
     return typeof data === "string"
       ? (structuredClone(data) as T)
       : (JSON.parse(data.join(""), reviver) as T);
   }
 
-  #hasChanged(data: string[] | string): boolean {
+  #hasChanged(data: tStored): boolean {
     return (
       this.#past.length === 0 ||
       this.#present.length !== data.length ||
@@ -323,16 +337,16 @@ export default class Undo<T> implements iUndo<T> {
   static range(
     start: number,
     end: number | null = null,
-    step: number = 1
+    step: number = 1,
   ): number[] {
     [start, end] = end === null ? [0, start - 1] : [start, end - 1];
     return Array.from(
       { length: Math.floor((end - start) / step) + 1 },
-      (_: never, i: number) => start + i * step
+      (_: never, i: number) => start + i * step,
     );
   }
 
-  static #getType(data: any): tString {
+  static #getType(data: unknown): tString {
     return Object.prototype.toString.call(data)[8] as tString;
   }
 }

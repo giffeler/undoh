@@ -14,20 +14,26 @@ Undoh uses the native [`structuredClone`](https://developer.mozilla.org/en-US/do
 
 ## Development and tooling
 
-Dependency baseline updated on **March 1, 2026**:
+Dependency baseline updated on **March 29, 2026**:
 
 - TypeScript: `^5.9.3`
-- Jest: `^29.7.0`
-- jest-util: `^29.7.0` (required by `ts-jest` runtime integration)
+- Jest: `^30.3.0`
 - ts-jest: `^29.4.6`
-- ESLint: `^10.0.2`
+- ESLint: `^10.1.0`
+- typescript-eslint: `^8.57.2`
 - Prettier: `^3.8.1`
-- @types/jest: `^29.5.14`
+- @types/jest: `^30.0.0`
+
+Runtime support for published packages remains **Node.js >= 17.0** because the library depends on `structuredClone`.
+Development and CI now target **Node.js 20.19+**, which is the minimum version required by the current ESLint 10 toolchain.
 
 Common local commands:
 
 ```bash
 npm ci
+npm run format:check
+npm run lint
+npm run typecheck
 npm run build
 npm test
 ```
@@ -57,30 +63,30 @@ Information about the **state** of the stack memory:
 
 ## How to use
 
-To save the current state as a snapshot a value is passed to the *retain* function. The data type of the passed value must be the same as the one specified when the constructor was initialized. If the constructor is initialized with a string, retain cannot be called with an array, for example.
+To save the current state as a snapshot a value is passed to the _retain_ function. The data type of the passed value must be the same as the one specified when the constructor was initialized. If the constructor is initialized with a string, retain cannot be called with an array, for example.
 
-*Undo* returns a snapshot of the previous state as a result, if available. At the same time the current state is written into the buffer for *redo* actions. If there are no (more) previous states in memory, the current state is returned.
+_Undo_ returns a snapshot of the previous state as a result, if available. At the same time the current state is written into the buffer for _redo_ actions. If there are no (more) previous states in memory, the current state is returned.
 
-The *redo* function can be executed if *undo* was called before. If there are no future states in memory, the current state is returned. If the data structure is changed after *undo* and saved again using *retain*, all values in memory for future changes with *redo* are lost from this point on.
+The _redo_ function can be executed if _undo_ was called before. If there are no future states in memory, the current state is returned. If the data structure is changed after _undo_ and saved again using _retain_, all values in memory for future changes with _redo_ are lost from this point on.
 
-Since complex data structures are converted using the native JSON functions, a **replacer** parameter can optionally be passed to the *constructor* and the *retain* function, and a **reviver** parameter can optionally be passed to the *undo* or *redo* function. The description of how to use the parameters can be found on the [Mozilla](https://developer.mozilla.org/) pages.
+Since complex data structures are converted using the native JSON functions, a **replacer** parameter can optionally be passed to the _constructor_ and the _retain_ function, and a **reviver** parameter can optionally be passed to the _undo_ or _redo_ function. The description of how to use the parameters can be found on the [Mozilla](https://developer.mozilla.org/) pages.
 
 ## Interface
 
 ```typescript
 type tString = Capitalize<string>;
-type tIndexable = string | any[];
-type tReviver = (key: string, value: any) => any;
-type tReplacer = any;
+type tIndexable = string | unknown[];
+type tReviver = NonNullable<Parameters<typeof JSON.parse>[1]>;
+type tReplacer = Parameters<typeof JSON.stringify>[1];
 
 interface iScript {
   pos: number;
-  val?: string[] | string;
+  val?: unknown;
 }
 ```
 
 - constructor(data: T, max?: number, objKeySort?: boolean, replacer?: tReplacer);
-  - data: Initializer. The *retain* function compares the first element to be filed with this value.
+  - data: Initializer. The _retain_ function compares the first element to be filed with this value.
   - max (opt): How many operations can be undone?
   - objKeySort (opt): Sort objects in ascending order according to the key.
   - replacer (opt): Applied to the initializer if it is an object. [Mozilla doku](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#the_replacer_parameter)
@@ -117,22 +123,26 @@ console.log(buffer.undo());
 console.log(buffer.redo());
 ```
 
-The following example script shows how easy it is to use the Undoh class in a DOM environment. A total of four HTML buttons are created. The upper two are linked to the *undo* and *redo* function. The lower two buttons *create* or *remove* text input fields. Between one and a maximum of five text input fields can be created. The creation or deletion of a field and the modification of its content can be undone or redone.
+The following example script shows how easy it is to use the Undoh class in a DOM environment. A total of four HTML buttons are created. The upper two are linked to the _undo_ and _redo_ function. The lower two buttons _create_ or _remove_ text input fields. Between one and a maximum of five text input fields can be created. The creation or deletion of a field and the modification of its content can be undone or redone.
 
 Try it here: [Stackblitz online example](https://stackblitz.com/edit/typescript-undoh?file=index.ts)
 
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <script type="module" src="example.js"></script>
     <style>
-        button,input { margin: 3px; }
-        button { user-select: none; }
+      button,
+      input {
+        margin: 3px;
+      }
+      button {
+        user-select: none;
+      }
     </style>
-</head>
-<body>
-</body>
+  </head>
+  <body></body>
 </html>
 ```
 
@@ -170,7 +180,7 @@ const updateButtonUndoRedo = (): void => {
   },
   retain = (): void => {
     const content: idval[] = [...area.querySelectorAll("input")].map(
-      (e: HTMLInputElement): idval => ({ id: e.id, value: e.value })
+      (e: HTMLInputElement): idval => ({ id: e.id, value: e.value }),
     );
     if (buffer) {
       buffer.retain(content);
@@ -235,8 +245,9 @@ retain = (): void => {
   } else {
     buffer = new Undo(input, 10, false, objects);
   }
-}
+};
 ```
 
 ---
+
 "Homer Simpson" - image credits: [Denis × DALL·E](https://labs.openai.com/s/93SaZlqKiYHgA1rGeVPzwnDC)

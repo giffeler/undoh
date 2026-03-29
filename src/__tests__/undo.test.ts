@@ -1,7 +1,7 @@
 import Undo from "../undo";
 
 describe("JSON", () => {
-  const data: Object = {
+  const data: Record<string, unknown> = {
     c: {
       x: 1,
       z: 3,
@@ -13,14 +13,17 @@ describe("JSON", () => {
 
   test("sort", () => {
     expect(Undo.jsonSort(data)).toBe(
-      `{\n "a": [\n  1,\n  2,\n  3\n ],\n "b": 34,\n "c": {\n  "x": 1,\n  "y": "hello",\n  "z": 3\n }\n}`
+      `{\n "a": [\n  1,\n  2,\n  3\n ],\n "b": 34,\n "c": {\n  "x": 1,\n  "y": "hello",\n  "z": 3\n }\n}`,
     );
   });
 });
 
 describe("objKeySort edge cases", () => {
   test("handles null values", () => {
-    const payload: Object = { beta: null, alpha: { gamma: null } };
+    const payload: Record<string, unknown> = {
+      beta: null,
+      alpha: { gamma: null },
+    };
     expect(JSON.parse(Undo.jsonSort(payload))).toStrictEqual({
       alpha: { gamma: null },
       beta: null,
@@ -81,7 +84,7 @@ describe("diff array", () => {
 
   test("insert", () => {
     expect(
-      Undo.diffScript(["a", "b", "c"], ["a", "b", "e", "c"])
+      Undo.diffScript(["a", "b", "c"], ["a", "b", "e", "c"]),
     ).toStrictEqual([{ pos: 2, val: "e" }]);
   });
 });
@@ -115,7 +118,7 @@ describe("string", () => {
 
 describe("number[]", () => {
   let num: number[] = [4711, -2, 88, 69];
-  let undo: Undo<number[]> = new Undo(num);
+  const undo: Undo<number[]> = new Undo(num);
 
   test("getters empty", () => {
     expect(undo.canUndo).toBeFalsy();
@@ -175,7 +178,11 @@ describe("number[]", () => {
 });
 
 describe("object", () => {
-  let undo: Undo<Object> = new Undo({ one: 1, two: 2, three: "drei" }, 5, true);
+  const undo: Undo<Record<string, unknown>> = new Undo(
+    { one: 1, two: 2, three: "drei" },
+    5,
+    true,
+  );
 
   test("sort", () => {
     expect(undo.retain({ two: 2, three: 3, one: 1, four: 4 })).toBeTruthy();
@@ -193,20 +200,20 @@ describe("object", () => {
 });
 
 describe("array of objects", () => {
-  let undo: Undo<Object> = new Undo([], 10);
+  const undo: Undo<Array<Record<string, unknown>>> = new Undo([], 10);
 
   test("retain", () => {
     expect(
       undo.retain([
         { id: "1", value: "" },
         { id: 2, value: "abc" },
-      ])
+      ]),
     ).toBeTruthy();
     expect(
       undo.retain([
         { id: "1", value: "xyz" },
         { id: 2, value: "abc" },
-      ])
+      ]),
     ).toBeTruthy();
     expect(undo.undo()).toStrictEqual([
       { id: "1", value: "" },
@@ -217,7 +224,7 @@ describe("array of objects", () => {
 
 describe("max", () => {
   const max: number = 2;
-  let undo: Undo<string> = new Undo("abc", max);
+  const undo: Undo<string> = new Undo("abc", max);
 
   test("overflow", () => {
     expect(undo.retain("bcd")).toBeTruthy();
@@ -232,7 +239,12 @@ describe("max", () => {
 
 describe("replacer", () => {
   const valid: string[] = ["b", "c"];
-  let undo: Undo<Object> = new Undo({ a: 1, b: 2, c: 3, d: 4 }, 10, true, valid);
+  const undo: Undo<Record<string, unknown>> = new Undo(
+    { a: 1, b: 2, c: 3, d: 4 },
+    10,
+    true,
+    valid,
+  );
 
   test("retain", () => {
     expect(undo.retain({ d: 4, b: 2, c: -3, a: -1, e: 0 }, valid)).toBeTruthy();
