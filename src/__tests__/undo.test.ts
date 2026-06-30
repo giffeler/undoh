@@ -1,4 +1,7 @@
-import Undo from "../undo";
+import assert from "node:assert/strict";
+import { beforeEach, describe, test } from "node:test";
+
+import Undo from "../undo.js";
 
 describe("JSON", () => {
   const data: Record<string, unknown> = {
@@ -12,7 +15,8 @@ describe("JSON", () => {
   };
 
   test("sort", () => {
-    expect(Undo.jsonSort(data)).toBe(
+    assert.equal(
+      Undo.jsonSort(data),
       `{\n "a": [\n  1,\n  2,\n  3\n ],\n "b": 34,\n "c": {\n  "x": 1,\n  "y": "hello",\n  "z": 3\n }\n}`,
     );
   });
@@ -24,7 +28,7 @@ describe("objKeySort edge cases", () => {
       beta: null,
       alpha: { gamma: null },
     };
-    expect(JSON.parse(Undo.jsonSort(payload))).toStrictEqual({
+    assert.deepStrictEqual(JSON.parse(Undo.jsonSort(payload)), {
       alpha: { gamma: null },
       beta: null,
     });
@@ -37,28 +41,28 @@ describe("objKeySort edge cases", () => {
     };
     const snapshot = JSON.parse(JSON.stringify(payload));
     Undo.jsonSort(payload);
-    expect(payload).toStrictEqual(snapshot);
+    assert.deepStrictEqual(payload, snapshot);
   });
 });
 
 describe("diff string", () => {
   test("empty", () => {
-    expect(Undo.diffScript("", "")).toStrictEqual([]);
+    assert.deepStrictEqual(Undo.diffScript("", ""), []);
   });
 
   test("remove", () => {
-    expect(Undo.diffScript("abc", "ac")).toStrictEqual([{ pos: 1 }]);
+    assert.deepStrictEqual(Undo.diffScript("abc", "ac"), [{ pos: 1 }]);
   });
 
   test("replace", () => {
-    expect(Undo.diffScript("abc", "abd")).toStrictEqual([
+    assert.deepStrictEqual(Undo.diffScript("abc", "abd"), [
       { pos: 2 },
       { pos: 3, val: "d" },
     ]);
   });
 
   test("insert", () => {
-    expect(Undo.diffScript("abc", "abec")).toStrictEqual([
+    assert.deepStrictEqual(Undo.diffScript("abc", "abec"), [
       { pos: 2, val: "e" },
     ]);
   });
@@ -66,26 +70,27 @@ describe("diff string", () => {
 
 describe("diff array", () => {
   test("empty", () => {
-    expect(Undo.diffScript([], [])).toStrictEqual([]);
+    assert.deepStrictEqual(Undo.diffScript([], []), []);
   });
 
   test("remove", () => {
-    expect(Undo.diffScript(["a", "b", "c"], ["a", "c"])).toStrictEqual([
+    assert.deepStrictEqual(Undo.diffScript(["a", "b", "c"], ["a", "c"]), [
       { pos: 1 },
     ]);
   });
 
   test("replace", () => {
-    expect(Undo.diffScript(["a", "b", "c"], ["a", "b", "d"])).toStrictEqual([
+    assert.deepStrictEqual(Undo.diffScript(["a", "b", "c"], ["a", "b", "d"]), [
       { pos: 2 },
       { pos: 3, val: "d" },
     ]);
   });
 
   test("insert", () => {
-    expect(
+    assert.deepStrictEqual(
       Undo.diffScript(["a", "b", "c"], ["a", "b", "e", "c"]),
-    ).toStrictEqual([{ pos: 2, val: "e" }]);
+      [{ pos: 2, val: "e" }],
+    );
   });
 });
 
@@ -99,20 +104,20 @@ describe("string", () => {
   });
 
   test("getters empty", () => {
-    expect(undo.canUndo).toBeFalsy();
-    expect(undo.canRedo).toBeFalsy();
-    expect(undo.countPast).toBe(0);
-    expect(undo.countFuture).toBe(0);
+    assert.equal(undo.canUndo, false);
+    assert.equal(undo.canRedo, false);
+    assert.equal(undo.countPast, 0);
+    assert.equal(undo.countFuture, 0);
   });
 
   test("retain unchanged", () => {
     str = "abc";
-    expect(undo.retain(str)).toBeTruthy();
-    expect(undo.retain(str)).toBeFalsy(); // not changed
-    expect(undo.canUndo).toBeTruthy();
-    expect(undo.countPast).toBe(1);
-    expect(undo.canRedo).toBeFalsy();
-    expect(undo.countFuture).toBe(0);
+    assert.equal(undo.retain(str), true);
+    assert.equal(undo.retain(str), false); // not changed
+    assert.equal(undo.canUndo, true);
+    assert.equal(undo.countPast, 1);
+    assert.equal(undo.canRedo, false);
+    assert.equal(undo.countFuture, 0);
   });
 });
 
@@ -121,59 +126,59 @@ describe("number[]", () => {
   const undo: Undo<number[]> = new Undo(num);
 
   test("getters empty", () => {
-    expect(undo.canUndo).toBeFalsy();
-    expect(undo.countPast).toBe(0);
-    expect(undo.canRedo).toBeFalsy();
-    expect(undo.countFuture).toBe(0);
+    assert.equal(undo.canUndo, false);
+    assert.equal(undo.countPast, 0);
+    assert.equal(undo.canRedo, false);
+    assert.equal(undo.countFuture, 0);
   });
 
   test("retain unchanged", () => {
     num[2] = 3.14;
-    expect(undo.retain(num)).toBeTruthy();
-    expect(undo.retain(num)).toBeFalsy(); // not changed
-    expect(undo.countPast).toBe(1);
+    assert.equal(undo.retain(num), true);
+    assert.equal(undo.retain(num), false); // not changed
+    assert.equal(undo.countPast, 1);
   });
 
   /*test("retain type", () => {
-    expect(undo.retain("hello")).toBeFalsy();
+    assert.equal(undo.retain("hello"), false);
   });*/
 
   test("undo", () => {
     num[0] = 0;
-    expect(undo.retain(num)).toBeTruthy();
-    expect(undo.countPast).toBe(2);
+    assert.equal(undo.retain(num), true);
+    assert.equal(undo.countPast, 2);
     num.push(5);
-    expect(undo.retain(num)).toBeTruthy();
-    expect(undo.countPast).toBe(3);
+    assert.equal(undo.retain(num), true);
+    assert.equal(undo.countPast, 3);
     num.shift();
-    expect(undo.retain(num)).toBeTruthy();
-    expect(undo.countPast).toBe(4);
-    expect((num = undo.undo())).toStrictEqual([0, -2, 3.14, 69, 5]);
-    expect((num = undo.undo())).toStrictEqual([0, -2, 3.14, 69]);
-    expect((num = undo.undo())).toStrictEqual([4711, -2, 3.14, 69]);
-    expect((num = undo.undo())).toStrictEqual([4711, -2, 88, 69]);
-    expect(undo.canUndo).toBeFalsy();
-    expect((num = undo.undo())).toStrictEqual([4711, -2, 88, 69]);
+    assert.equal(undo.retain(num), true);
+    assert.equal(undo.countPast, 4);
+    assert.deepStrictEqual((num = undo.undo()), [0, -2, 3.14, 69, 5]);
+    assert.deepStrictEqual((num = undo.undo()), [0, -2, 3.14, 69]);
+    assert.deepStrictEqual((num = undo.undo()), [4711, -2, 3.14, 69]);
+    assert.deepStrictEqual((num = undo.undo()), [4711, -2, 88, 69]);
+    assert.equal(undo.canUndo, false);
+    assert.deepStrictEqual((num = undo.undo()), [4711, -2, 88, 69]);
   });
 
   test("redo", () => {
-    expect((num = undo.redo())).toStrictEqual([4711, -2, 3.14, 69]);
-    expect((num = undo.redo())).toStrictEqual([0, -2, 3.14, 69]);
-    expect((num = undo.redo())).toStrictEqual([0, -2, 3.14, 69, 5]);
-    expect(undo.canRedo).toBeTruthy();
-    expect((num = undo.redo())).toStrictEqual([-2, 3.14, 69, 5]);
-    expect(undo.canRedo).toBeFalsy();
+    assert.deepStrictEqual((num = undo.redo()), [4711, -2, 3.14, 69]);
+    assert.deepStrictEqual((num = undo.redo()), [0, -2, 3.14, 69]);
+    assert.deepStrictEqual((num = undo.redo()), [0, -2, 3.14, 69, 5]);
+    assert.equal(undo.canRedo, true);
+    assert.deepStrictEqual((num = undo.redo()), [-2, 3.14, 69, 5]);
+    assert.equal(undo.canRedo, false);
   });
 
   test("undo change", () => {
     undo.undo();
     num = undo.undo();
-    expect(undo.countFuture).toBe(2);
+    assert.equal(undo.countFuture, 2);
     num[1] = 20;
-    expect(undo.retain(num)).toBeTruthy();
-    expect(undo.canRedo).toBeFalsy();
-    expect(undo.countFuture).toBe(0);
-    expect(num).toStrictEqual([0, 20, 3.14, 69]);
+    assert.equal(undo.retain(num), true);
+    assert.equal(undo.canRedo, false);
+    assert.equal(undo.countFuture, 0);
+    assert.deepStrictEqual(num, [0, 20, 3.14, 69]);
   });
 });
 
@@ -185,17 +190,17 @@ describe("object", () => {
   );
 
   test("sort", () => {
-    expect(undo.retain({ two: 2, three: 3, one: 1, four: 4 })).toBeTruthy();
-    expect(undo.retain({ three: 3, one: 1 })).toBeTruthy();
-    expect(undo.retain({ three: 3, one: 1 })).toBeFalsy();
+    assert.equal(undo.retain({ two: 2, three: 3, one: 1, four: 4 }), true);
+    assert.equal(undo.retain({ three: 3, one: 1 }), true);
+    assert.equal(undo.retain({ three: 3, one: 1 }), false);
   });
 
   test("undo", () => {
-    expect(undo.undo()).toStrictEqual({ four: 4, one: 1, three: 3, two: 2 });
+    assert.deepStrictEqual(undo.undo(), { four: 4, one: 1, three: 3, two: 2 });
   });
 
   test("redo", () => {
-    expect(undo.redo()).toStrictEqual({ one: 1, three: 3 });
+    assert.deepStrictEqual(undo.redo(), { one: 1, three: 3 });
   });
 });
 
@@ -203,19 +208,21 @@ describe("array of objects", () => {
   const undo: Undo<Array<Record<string, unknown>>> = new Undo([], 10);
 
   test("retain", () => {
-    expect(
+    assert.equal(
       undo.retain([
         { id: "1", value: "" },
         { id: 2, value: "abc" },
       ]),
-    ).toBeTruthy();
-    expect(
+      true,
+    );
+    assert.equal(
       undo.retain([
         { id: "1", value: "xyz" },
         { id: 2, value: "abc" },
       ]),
-    ).toBeTruthy();
-    expect(undo.undo()).toStrictEqual([
+      true,
+    );
+    assert.deepStrictEqual(undo.undo(), [
       { id: "1", value: "" },
       { id: 2, value: "abc" },
     ]);
@@ -227,13 +234,13 @@ describe("max", () => {
   const undo: Undo<string> = new Undo("abc", max);
 
   test("overflow", () => {
-    expect(undo.retain("bcd")).toBeTruthy();
-    expect(undo.retain("bcde")).toBeTruthy();
-    expect(undo.retain("bdef")).toBeTruthy();
-    expect(undo.countPast).toBe(max);
-    expect(undo.undo()).toStrictEqual("bcde");
-    expect(undo.undo()).toStrictEqual("bcd");
-    expect(undo.canUndo).toBeFalsy();
+    assert.equal(undo.retain("bcd"), true);
+    assert.equal(undo.retain("bcde"), true);
+    assert.equal(undo.retain("bdef"), true);
+    assert.equal(undo.countPast, max);
+    assert.deepStrictEqual(undo.undo(), "bcde");
+    assert.deepStrictEqual(undo.undo(), "bcd");
+    assert.equal(undo.canUndo, false);
   });
 });
 
@@ -247,13 +254,13 @@ describe("replacer", () => {
   );
 
   test("retain", () => {
-    expect(undo.retain({ d: 4, b: 2, c: -3, a: -1, e: 0 }, valid)).toBeTruthy();
+    assert.equal(undo.retain({ d: 4, b: 2, c: -3, a: -1, e: 0 }, valid), true);
   });
   test("undo", () => {
-    expect(undo.undo()).toStrictEqual({ b: 2, c: 3 });
+    assert.deepStrictEqual(undo.undo(), { b: 2, c: 3 });
   });
   test("redo", () => {
-    expect(undo.redo()).toStrictEqual({ b: 2, c: -3 });
+    assert.deepStrictEqual(undo.redo(), { b: 2, c: -3 });
   });
 });
 
@@ -262,12 +269,12 @@ describe("documentation contract", () => {
     const buffer: Undo<string> = new Undo("");
     buffer.retain("def");
     buffer.retain("ghi");
-    expect(buffer.undo()).toBe("def");
-    expect(buffer.redo()).toBe("ghi");
+    assert.equal(buffer.undo(), "def");
+    assert.equal(buffer.redo(), "ghi");
   });
 
   test("applyEdit remains available as a static helper", () => {
     const script = Undo.diffScript("abc", "adc");
-    expect(Undo.applyEdit(script, "abc")).toBe("adc");
+    assert.equal(Undo.applyEdit(script, "abc"), "adc");
   });
 });

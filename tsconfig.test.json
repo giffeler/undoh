@@ -1,11 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "declaration": false,
     "isolatedModules": true,
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "noEmit": true,
-    "types": ["jest", "node"]
+    "noEmit": false,
+    "outDir": ".tmp/test",
+    "rootDir": "src",
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts"]
+  "files": ["src/undo.ts", "src/__tests__/undo.test.ts"]
 }

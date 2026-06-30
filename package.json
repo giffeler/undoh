@@ -20,7 +20,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "jest --config jestconfig.json",
+    "test": "tsc -p tsconfig.test.json && node --test .tmp/test/__tests__/undo.test.js",
     "build": "tsc",
     "prepare": "npm run build",
     "version": "npm run format && git add -A src",
@@ -53,12 +53,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/jest": "^30.0.0",
+    "@types/node": "^26.0.1",
     "eslint": "^10.1.0",
     "globals": "^17.4.0",
-    "jest": "^30.3.0",
     "prettier": "^3.8.1",
-    "ts-jest": "^29.4.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.2"
   }
