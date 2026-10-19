@@ -14,18 +14,25 @@ Undoh uses the native [`structuredClone`](https://developer.mozilla.org/en-US/do
 
 ## Development and tooling
 
-Dependency baseline updated on **March 29, 2026**:
+Dependency baseline updated on **October 19, 2026**:
 
 - TypeScript: `^5.9.3`
-- Jest: `^30.3.0`
-- ts-jest: `^29.4.6`
-- ESLint: `^10.1.0`
-- typescript-eslint: `^8.57.2`
-- Prettier: `^3.8.1`
-- @types/jest: `^30.0.0`
+- ESLint: `^10.13.0`
+- @eslint/js: `^10.0.1`
+- typescript-eslint: `^8.71.2`
+- Prettier: `^3.9.10`
+- @types/node: `^26.6.5`
+- globals: `^17.13.0`
+
+Tests use the built-in Node.js test runner. TypeScript remains on 5.9.3 because
+typescript-eslint 8.71.2 does not support TypeScript 7. The lockfile includes
+brace-expansion 5.0.12, which fixes the reported denial-of-service vulnerabilities
+in the development dependency tree. The published library has no runtime dependencies.
 
 Runtime support for published packages remains **Node.js >= 17.0** because the library depends on `structuredClone`.
 Development and CI now target **Node.js 20.19+**, which is the minimum version required by the current ESLint 10 toolchain.
+Publishing uses Node.js 24 and npm 11.21.1 for
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) with provenance.
 
 Common local commands:
 
